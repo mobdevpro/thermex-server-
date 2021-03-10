@@ -1,0 +1,16 @@
+#Header set Access-Control-Allow-Origin "*"
+#Header set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+#Header set Access-Control-Allow-Headers "Content-Type, Origin, Accept, Authorization"
+#Header set Access-Control-Max-Age "1000"
+
+RewriteEngine on
+
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=202,L]
+
+# If a directory or a file exists, use the request directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Otherwise forward the request to index.php
+
+RewriteRule . index.php

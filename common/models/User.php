@@ -14,20 +14,29 @@ use yii\web\IdentityInterface;
  * @property string $username
  * @property string $password_hash
  * @property string $password_reset_token
- * @property string $verification_token
  * @property string $email
  * @property string $auth_key
  * @property integer $status
  * @property integer $created_at
  * @property integer $updated_at
- * @property string $password write-only password
+ * @property string $verification_token
  */
 class User extends ActiveRecord implements IdentityInterface
 {
     const STATUS_DELETED = 0;
+    const STATUS_UNACTIVATED = 8;
     const STATUS_INACTIVE = 9;
     const STATUS_ACTIVE = 10;
+    
+    const ERROR_UNKNOWN = 1000;
+    const ERROR_ACCESS_DENIED = 1001;
+    const ERROR_BAD_PHONE = 1002;
+    const ERROR_BAD_DATA = 1003;
+    const ERROR_SMS_OFTEN = 1004;
+    const ERROR_WRONG_LOGIN_PASSWORD = 1005;
 
+    const APP_ID = "d3d70ebc-5e96-4dc2-a51d-a644f2daaa83";
+    const APP_TOKEN = "OGIwMzU3N2MtNWExMS00MDVkLTkzYTUtMTQ0ZTZiYmU4MGIy";
 
     /**
      * {@inheritdoc}
@@ -54,7 +63,7 @@ class User extends ActiveRecord implements IdentityInterface
     {
         return [
             ['status', 'default', 'value' => self::STATUS_INACTIVE],
-            ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_DELETED]],
+            ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_DELETED, self::STATUS_UNACTIVATED]],
         ];
     }
 
@@ -71,7 +80,8 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
-        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
+        return static::findOne(['auth_key' => $token]);
+//        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
     }
 
     /**
@@ -165,7 +175,8 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public function validatePassword($password)
     {
-        return Yii::$app->security->validatePassword($password, $this->password_hash);
+        return md5($password) === $this->password_hash;
+//        return Yii::$app->security->validatePassword($password, $this->password_hash);
     }
 
     /**
@@ -208,5 +219,92 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+    
+    function attributes()
+    {
+        $attributes = parent::attributes();
+        $attributes[] = 'role';
+        $attributes[] = 'roles';
+        return $attributes;
+    }
+    
+    public function getProfile() {
+        $user = new \stdClass();
+        $user = $this;
+        unset($user->password_hash);
+        unset($user->password_reset_token);
+        unset($user->verification_token);
+        
+        $roles = [];
+        $userAssigned = Yii::$app->authManager->getAssignments($this->id);
+        foreach($userAssigned as $userAssign){
+            array_push($roles, $userAssign->roleName);
+        }
+        $user->roles = $roles;
+        
+        return $user;
+    }
+
+    public function getPublicProfile() {
+        $user = new \stdClass();
+        $user = $this;
+        unset($user->password_hash);
+        unset($user->password_reset_token);
+        unset($user->verification_token);
+        unset($user->status);
+        unset($user->auth_key);
+        // unset($user->username);
+        unset($user->created_at);
+        unset($user->updated_at);
+        
+        $roles = [];
+        $userAssigned = Yii::$app->authManager->getAssignments($this->id);
+        foreach($userAssigned as $userAssign){
+            array_push($roles, $userAssign->roleName);
+        }
+        
+        $connection = Yii::$app->getDb();
+        if (in_array('pacient', $roles)) {
+//            $command = $connection->createCommand("select subject_id, `name`, color1, color2, icon from (select subject_id from student_subjects where is_show = 1 and student_id=".$user->id.") as t1 left join dic_subjects on dic_subjects.id = t1.subject_id");
+//            $query = $command->queryAll();
+//            
+//            $array = [];
+//            
+//            for ($i=0;$i<count($query);$i++) {
+//                $tests = TestResult::find()->where(['subject_id' => $query[$i]['subject_id'], 'student_id' => $this->id])->all();
+//                $all = 0;
+//                $sum = 0;
+//                for ($y=0;$y<count($tests);$y++) {
+//                    $all += $tests[$y]->all;
+//                    $sum += $tests[$y]->sum;
+//                }
+//                $obj = new \stdClass();
+//                $obj->subject_id = $query[$i]['subject_id'];
+//                $obj->name = $query[$i]['name'];
+//                $obj->color1 = $query[$i]['color1'];
+//                $obj->color2 = $query[$i]['color2'];
+//                $obj->icon = $query[$i]['icon'];
+//                $obj->lessons = count($tests);
+//                if ($all != 0) {
+//                    $obj->percent = round($sum / $all)*100;
+//                } else {
+//                    $obj->percent = 0;
+//                }
+//                
+//                array_push($array, $obj);
+//            }
+//            
+//            $user->subjects = $array;
+////            $user->subjects = $query;
+            
+            
+        } else {
+            // $command = $connection->createCommand("select speciality_id, `name` from (select speciality_id from doctor_specialities where doctor_id=".$user->id.") as t1 left join dic_specialities on dic_specialities.id = t1.speciality_id");
+            // $query = $command->queryAll();
+            // $user->specialities = $query;
+        }
+        
+        return $user;
     }
 }
