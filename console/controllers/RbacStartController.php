@@ -14,6 +14,10 @@ class RbacStartController extends Controller
        // $admin = $auth->createRole('admin');
        // $auth->add($admin);
 
+       // // добавляем роль "watcher"
+       // $watcher = $auth->createRole('watcher');
+       // $auth->add($watcher);
+
        // // добавляем роль "manager"
        // $manager = $auth->createRole('manager');
        // $auth->add($manager);
@@ -34,6 +38,10 @@ class RbacStartController extends Controller
        // $role = $auth->getRole('admin');
        // $auth->assign($role, 1);
        
+
+
+
+
        $admin = $auth->getRole('admin');
 
        // $getPermissions = $auth->createPermission('getPermissions');
@@ -47,15 +55,26 @@ class RbacStartController extends Controller
        // $auth->addChild($admin, $getPermissions);
        // $auth->addChild($admin, $updatePermission);
 
-       $getDb = $auth->createPermission('getDb');
-       $getDb->description = 'Получение списка/одной баз(ы) данных';
-       $auth->add($getDb);
+        //    $getDb = $auth->createPermission('getDb');
+        //    $getDb->description = 'Получение списка/одной баз(ы) данных';
+        //    $auth->add($getDb);
 
-       $updateDb = $auth->createPermission('updateDb');
-       $updateDb->description = 'Создание/редактирование/удаление базы данных';
-       $auth->add($updateDb);
+        //    $updateDb = $auth->createPermission('updateDb');
+        //    $updateDb->description = 'Создание/редактирование/удаление базы данных';
+        //    $auth->add($updateDb);
 
-       $auth->addChild($admin, $getDb);
-       $auth->addChild($admin, $updateDb);
+       $getSettings = $auth->createPermission('getSettings');
+       $getSettings->description = 'Получение списка настроек системы';
+       $auth->add($getSettings);
+
+       $updateSettings = $auth->createPermission('updateSettings');
+       $updateSettings->description = 'Редактирование настройки';
+       $auth->add($updateSettings);
+
+
+
+
+       $auth->addChild($admin, $getSettings);
+       $auth->addChild($admin, $updateSettings);
    }
 }
