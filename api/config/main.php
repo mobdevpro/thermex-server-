@@ -105,6 +105,30 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
+                    'controller' => 'v1/manager',
+                    'extraPatterns' => [
+                        'GET get-managers' => 'get-managers',
+                        'POST save' => 'save',
+                        'GET delete-manager' => 'delete-manager',
+                        'GET set-manager-status' => 'set-manager-status',
+                        'GET new-password' => 'new-password',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => 'v1/partner',
+                    'extraPatterns' => [
+                        'GET get-partners' => 'get-partners',
+                        'POST save' => 'save',
+                        'GET delete-partner' => 'delete-partner',
+                        'GET set-partner-status' => 'set-partner-status',
+                        'GET new-password' => 'new-password',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
                     'controller' => 'v1/permissions',
                     'extraPatterns' => [
                         'GET get-permissions' => 'get-permissions',

@@ -29,10 +29,16 @@ class RbacStartController extends Controller
        // // добавляем роль "engineer"
        // $engineer = $auth->createRole('engineer');
        // $auth->add($engineer);
+
+    //    // добавляем роль "partner"
+    //    $partner = $auth->createRole('partner');
+    //    $auth->add($partner);
        
        // $auth->addChild($admin, $manager);
        // $auth->addChild($admin, $user);
        // $auth->addChild($admin, $engineer);
+    //    $auth->addChild($admin, $partner);
+    //    $auth->addChild($admin, $watcher);
        
        // $auth = Yii::$app->authManager;
        // $role = $auth->getRole('admin');
@@ -71,23 +77,46 @@ class RbacStartController extends Controller
     //    $updateSettings->description = 'Редактирование настройки';
     //    $auth->add($updateSettings);
 
-        $getEngineers = $auth->createPermission('getEngineers');
-        $getEngineers->description = 'Получение списка инженеров';
-        $auth->add($getEngineers);
+        // $getEngineers = $auth->createPermission('getEngineers');
+        // $getEngineers->description = 'Получение списка инженеров';
+        // $auth->add($getEngineers);
 
-        $updateEngineer = $auth->createPermission('updateEngineer');
-        $updateEngineer->description = 'Создание/редактирование профиля инженера';
-        $auth->add($updateEngineer);
+        // $updateEngineer = $auth->createPermission('updateEngineer');
+        // $updateEngineer->description = 'Создание/редактирование профиля инженера';
+        // $auth->add($updateEngineer);
 
-        $deleteEngineer = $auth->createPermission('deleteEngineer');
-        $deleteEngineer->description = 'Удаление профиля инженера';
-        $auth->add($deleteEngineer);
+        // $deleteEngineer = $auth->createPermission('deleteEngineer');
+        // $deleteEngineer->description = 'Удаление профиля инженера';
+        // $auth->add($deleteEngineer);
+
+        // $getManagers = $auth->createPermission('getManagers');
+        // $getManagers->description = 'Получение списка менеджеров';
+        // $auth->add($getManagers);
+
+        // $updateManager = $auth->createPermission('updateManager');
+        // $updateManager->description = 'Создание/редактирование профиля менеджера';
+        // $auth->add($updateManager);
+
+        // $deleteManager = $auth->createPermission('deleteManager');
+        // $deleteManager->description = 'Удаление профиля менеджера';
+        // $auth->add($deleteManager);
+
+        $getPartners = $auth->createPermission('getPartners');
+        $getPartners->description = 'Получение списка партнеров';
+        $auth->add($getPartners);
+
+        $updatePartner = $auth->createPermission('updatePartner');
+        $updatePartner->description = 'Создание/редактирование профиля партнера';
+        $auth->add($updatePartner);
+
+        $deletePartner = $auth->createPermission('deletePartner');
+        $deletePartner->description = 'Удаление профиля партнера';
+        $auth->add($deletePartner);
 
 
 
-
-       $auth->addChild($admin, $getEngineers);
-       $auth->addChild($admin, $updateEngineer);
-       $auth->addChild($admin, $deleteEngineer);
+       $auth->addChild($admin, $getPartners);
+       $auth->addChild($admin, $updatePartner);
+       $auth->addChild($admin, $deletePartner);
    }
 }
