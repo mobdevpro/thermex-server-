@@ -84,7 +84,7 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
-                    'controller' => 'v1/settings',
+                    'controller' => 'v1/permissions',
                     'extraPatterns' => [
                         'GET get-permissions' => 'get-permissions',
                         'POST update-permission' => 'update-permission',

@@ -5,14 +5,14 @@ use yii;
 use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
-use common\models\Subjects;
+use common\models\Databases;
 
 /**
- * User Controller
+ * Permissions Controller
  */
-class SettingsController extends \api\modules\v1\components\ApiController
+class PermissionsController extends \api\modules\v1\components\ApiController
 {
-    public $modelClass = 'api\modules\v1\models\Subjects';
+    public $modelClass = 'api\modules\v1\models\Databases';
     
     var $unauthorized_actions = [
             

@@ -33,9 +33,9 @@ class DatabasesController extends \api\modules\v1\components\ApiController
     
     public function actionGetDatabases() {
         
-        // if (!\Yii::$app->user->can('getDb')) {
-        //     throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
-        // }
+        if (!\Yii::$app->user->can('getDb')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
         
         $databases = Databases::find()->all();
         
@@ -49,9 +49,9 @@ class DatabasesController extends \api\modules\v1\components\ApiController
     
     public function actionSave() {
         
-        // if (!\Yii::$app->user->can('updateDb')) {
-        //     throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
-        // }
+        if (!\Yii::$app->user->can('updateDb')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
         
         $params = Yii::$app->request->post();
         
@@ -107,9 +107,9 @@ class DatabasesController extends \api\modules\v1\components\ApiController
     
     public function actionDeleteDatabase() {
         
-        // if (!\Yii::$app->user->can('updateDb')) {
-        //     throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
-        // }
+        if (!\Yii::$app->user->can('updateDb')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
         
         $params = Yii::$app->request->get();
         
