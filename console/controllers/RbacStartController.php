@@ -63,18 +63,31 @@ class RbacStartController extends Controller
         //    $updateDb->description = 'Создание/редактирование/удаление базы данных';
         //    $auth->add($updateDb);
 
-       $getSettings = $auth->createPermission('getSettings');
-       $getSettings->description = 'Получение списка настроек системы';
-       $auth->add($getSettings);
+    //    $getSettings = $auth->createPermission('getSettings');
+    //    $getSettings->description = 'Получение списка настроек системы';
+    //    $auth->add($getSettings);
 
-       $updateSettings = $auth->createPermission('updateSettings');
-       $updateSettings->description = 'Редактирование настройки';
-       $auth->add($updateSettings);
+    //    $updateSettings = $auth->createPermission('updateSettings');
+    //    $updateSettings->description = 'Редактирование настройки';
+    //    $auth->add($updateSettings);
+
+        $getEngineers = $auth->createPermission('getEngineers');
+        $getEngineers->description = 'Получение списка инженеров';
+        $auth->add($getEngineers);
+
+        $updateEngineer = $auth->createPermission('updateEngineer');
+        $updateEngineer->description = 'Создание/редактирование профиля инженера';
+        $auth->add($updateEngineer);
+
+        $deleteEngineer = $auth->createPermission('deleteEngineer');
+        $deleteEngineer->description = 'Удаление профиля инженера';
+        $auth->add($deleteEngineer);
 
 
 
 
-       $auth->addChild($admin, $getSettings);
-       $auth->addChild($admin, $updateSettings);
+       $auth->addChild($admin, $getEngineers);
+       $auth->addChild($admin, $updateEngineer);
+       $auth->addChild($admin, $deleteEngineer);
    }
 }

@@ -20,6 +20,8 @@ use yii\web\IdentityInterface;
  * @property integer $created_at
  * @property integer $updated_at
  * @property string $verification_token
+ * @property string $fio
+ * @property string $avatar
  */
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -252,7 +254,7 @@ class User extends ActiveRecord implements IdentityInterface
         unset($user->password_hash);
         unset($user->password_reset_token);
         unset($user->verification_token);
-        unset($user->status);
+        // unset($user->status);
         unset($user->auth_key);
         // unset($user->username);
         unset($user->created_at);
@@ -263,46 +265,14 @@ class User extends ActiveRecord implements IdentityInterface
         foreach($userAssigned as $userAssign){
             array_push($roles, $userAssign->roleName);
         }
+
+        $user->roles = $roles;
         
         $connection = Yii::$app->getDb();
         if (in_array('pacient', $roles)) {
-//            $command = $connection->createCommand("select subject_id, `name`, color1, color2, icon from (select subject_id from student_subjects where is_show = 1 and student_id=".$user->id.") as t1 left join dic_subjects on dic_subjects.id = t1.subject_id");
-//            $query = $command->queryAll();
-//            
-//            $array = [];
-//            
-//            for ($i=0;$i<count($query);$i++) {
-//                $tests = TestResult::find()->where(['subject_id' => $query[$i]['subject_id'], 'student_id' => $this->id])->all();
-//                $all = 0;
-//                $sum = 0;
-//                for ($y=0;$y<count($tests);$y++) {
-//                    $all += $tests[$y]->all;
-//                    $sum += $tests[$y]->sum;
-//                }
-//                $obj = new \stdClass();
-//                $obj->subject_id = $query[$i]['subject_id'];
-//                $obj->name = $query[$i]['name'];
-//                $obj->color1 = $query[$i]['color1'];
-//                $obj->color2 = $query[$i]['color2'];
-//                $obj->icon = $query[$i]['icon'];
-//                $obj->lessons = count($tests);
-//                if ($all != 0) {
-//                    $obj->percent = round($sum / $all)*100;
-//                } else {
-//                    $obj->percent = 0;
-//                }
-//                
-//                array_push($array, $obj);
-//            }
-//            
-//            $user->subjects = $array;
-////            $user->subjects = $query;
-            
             
         } else {
-            // $command = $connection->createCommand("select speciality_id, `name` from (select speciality_id from doctor_specialities where doctor_id=".$user->id.") as t1 left join dic_specialities on dic_specialities.id = t1.speciality_id");
-            // $query = $command->queryAll();
-            // $user->specialities = $query;
+            
         }
         
         return $user;

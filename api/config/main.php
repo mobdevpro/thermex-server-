@@ -93,6 +93,18 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
+                    'controller' => 'v1/engineer',
+                    'extraPatterns' => [
+                        'GET get-engineers' => 'get-engineers',
+                        'POST save' => 'save',
+                        'GET delete-engineer' => 'delete-engineer',
+                        'GET set-engineer-status' => 'set-engineer-status',
+                        'GET new-password' => 'new-password',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
                     'controller' => 'v1/permissions',
                     'extraPatterns' => [
                         'GET get-permissions' => 'get-permissions',
