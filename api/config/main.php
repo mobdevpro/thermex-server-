@@ -69,6 +69,7 @@ return [
                     'controller' => 'v1/helper',
                     'extraPatterns' => [
                         'GET geocoder' => 'geocoder',
+                        'GET search-address' => 'search-address',
                     ]
                 ],
                 [

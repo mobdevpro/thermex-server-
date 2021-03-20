@@ -57,14 +57,44 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $params = Yii::$app->request->post();
         
         $id = $params['id'];
-        $name = $params['name'];
+        $name_our = $params['name_our'];
+        $model_id = $params['model_id'];
+        $serial = $params['serial'];
+        $imei = $params['imei'];
+        $partner_id = $params['partner_id'];
+        $date_product = $params['date_product'];
+        $comment_admin = $params['comment_admin'];
 
-        if(!empty($name)) {
-            if($id == 0) {
-                $model = new DicModels();
-                $model->name = $name;
-                
-                if($model->save()) {
+        if($id == 0) {
+            $device = new Device();
+            $device->name_our = $name_our;
+            $device->model_id = $model_id;
+            $device->serial = $serial;
+            $device->imei = $imei;
+            $device->partner_id = $partner_id;
+            $device->date_product = $date_product;
+            $device->comment_admin = $comment_admin;
+            
+            if($device->save()) {
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+            }
+        } else {
+            $device = Device::find()->where(['id' => $id])->one();
+            if(!empty($device)) {
+                $device->name_our = $name_our;
+                $device->model_id = $model_id;
+                $device->serial = $serial;
+                $device->imei = $imei;
+                $device->partner_id = $partner_id;
+                $device->date_product = $date_product;
+                $device->comment_admin = $comment_admin;
+
+                if($device->save()) {
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;
@@ -73,24 +103,8 @@ class DeviceController extends \api\modules\v1\components\ApiController
                     throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
                 }
             } else {
-                $model = DicModels::find()->where(['id' => $id])->one();
-                if(!empty($model)) {
-                    $model->name = $name;
-
-                    if($model->save()) {
-                        $data = [];
-                        $data['success'] = true;
-                        $data['status'] = 200;
-                        return $data;
-                    } else {
-                        throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
-                    }
-                } else {
-                    throw new \yii\web\HttpException(400, 'База не найдена!', User::ERROR_BAD_DATA);
-                }
+                throw new \yii\web\HttpException(400, 'База не найдена!', User::ERROR_BAD_DATA);
             }
-        } else {
-            throw new \yii\web\HttpException(400, 'Заполните все поля!', User::ERROR_BAD_DATA);
         }
     }
     
