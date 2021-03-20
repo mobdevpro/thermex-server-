@@ -124,6 +124,27 @@ return [
                         'GET delete-partner' => 'delete-partner',
                         'GET set-partner-status' => 'set-partner-status',
                         'GET new-password' => 'new-password',
+                        'GET test' => 'test',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => 'v1/models',
+                    'extraPatterns' => [
+                        'GET get-models' => 'get-models',
+                        'POST save' => 'save',
+                        'GET delete-model' => 'delete-model',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => 'v1/device',
+                    'extraPatterns' => [
+                        'GET get-devices' => 'get-devices',
+                        'POST save' => 'save',
+                        'GET delete-device' => 'delete-device',
                     ]
                 ],
                 [

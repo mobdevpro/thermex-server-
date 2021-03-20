@@ -101,22 +101,46 @@ class RbacStartController extends Controller
         // $deleteManager->description = 'Удаление профиля менеджера';
         // $auth->add($deleteManager);
 
-        $getPartners = $auth->createPermission('getPartners');
-        $getPartners->description = 'Получение списка партнеров';
-        $auth->add($getPartners);
+        // $getPartners = $auth->createPermission('getPartners');
+        // $getPartners->description = 'Получение списка партнеров';
+        // $auth->add($getPartners);
 
-        $updatePartner = $auth->createPermission('updatePartner');
-        $updatePartner->description = 'Создание/редактирование профиля партнера';
-        $auth->add($updatePartner);
+        // $updatePartner = $auth->createPermission('updatePartner');
+        // $updatePartner->description = 'Создание/редактирование профиля партнера';
+        // $auth->add($updatePartner);
 
-        $deletePartner = $auth->createPermission('deletePartner');
-        $deletePartner->description = 'Удаление профиля партнера';
-        $auth->add($deletePartner);
+        // $deletePartner = $auth->createPermission('deletePartner');
+        // $deletePartner->description = 'Удаление профиля партнера';
+        // $auth->add($deletePartner);
+
+        // $getModels = $auth->createPermission('getModels');
+        // $getModels->description = 'Получение списка моделей контроллеров';
+        // $auth->add($getModels);
+
+        // $updateModel = $auth->createPermission('updateModel');
+        // $updateModel->description = 'Создание/редактирование модели контролера';
+        // $auth->add($updateModel);
+
+        // $deleteModel = $auth->createPermission('deleteModel');
+        // $deleteModel->description = 'Удаление модели контролера';
+        // $auth->add($deleteModel);
+
+        $getDevices = $auth->createPermission('getDevices');
+        $getDevices->description = 'Получение списка устройств';
+        $auth->add($getDevices);
+
+        $updateDevice = $auth->createPermission('updateDevice');
+        $updateDevice->description = 'Создание/редактирование устройства';
+        $auth->add($updateDevice);
+
+        $deleteDevice = $auth->createPermission('deleteDevice');
+        $deleteDevice->description = 'Удаление устройства';
+        $auth->add($deleteDevice);
 
 
 
-       $auth->addChild($admin, $getPartners);
-       $auth->addChild($admin, $updatePartner);
-       $auth->addChild($admin, $deletePartner);
+       $auth->addChild($admin, $getDevices);
+       $auth->addChild($admin, $updateDevice);
+       $auth->addChild($admin, $deleteDevice);
    }
 }

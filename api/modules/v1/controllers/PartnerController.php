@@ -5,6 +5,8 @@ use yii;
 use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
+use common\models\TestTable1;
+use common\models\Databases;
 
 /**
  * Partner Controller
@@ -14,7 +16,7 @@ class PartnerController extends \api\modules\v1\components\ApiController
     public $modelClass = 'api\modules\v1\models\User';
     
     var $unauthorized_actions = [
-            
+        'test'
     ];
     
     public function behaviors() {
@@ -28,6 +30,17 @@ class PartnerController extends \api\modules\v1\components\ApiController
     public function init() {
         parent::init();
         Yii::$app->response->format = Response::FORMAT_JSON;
+    }
+
+    public function actionTest() {
+
+        $obj = new \StdClass();
+        $obj->id = 1;
+        $db = Databases::find()->where(['id' => 1])->one();
+        $tt1 = new TestTable1($db, $obj);
+        $tt1->name = 'aaaa';
+        $tt1->device_id = 12;
+        $tt1->save();
     }
     
     public function actionGetPartners() {
