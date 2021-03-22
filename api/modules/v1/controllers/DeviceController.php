@@ -59,6 +59,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $id = $params['id'];
         $name_our = $params['name_our'];
         $model_id = $params['model_id'];
+        $firmware_id = $params['firmware_id'];
         $serial = $params['serial'];
         $imei = $params['imei'];
         $partner_id = $params['partner_id'];
@@ -69,6 +70,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
             $device = new Device();
             $device->name_our = $name_our;
             $device->model_id = $model_id;
+            $device->firmware_id = $firmware_id;
             $device->serial = $serial;
             $device->imei = $imei;
             $device->partner_id = $partner_id;
@@ -88,6 +90,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
             if(!empty($device)) {
                 $device->name_our = $name_our;
                 $device->model_id = $model_id;
+                $device->firmware_id = $firmware_id;
                 $device->serial = $serial;
                 $device->imei = $imei;
                 $device->partner_id = $partner_id;

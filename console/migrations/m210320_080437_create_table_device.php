@@ -17,7 +17,7 @@ class m210320_080437_create_table_device extends Migration
             'status' => $this->string()->notNull(),
             'serial' => $this->string()->notNull()->unique(),
             'model_id' => $this->integer()->notNull(),
-            'datasheet_id' => $this->integer(),
+            'firmware_id' => $this->integer(),
             'imei' => $this->string()->notNull()->unique(),
             'password' => $this->string(),
             'name_our' => $this->string(),
@@ -33,6 +33,7 @@ class m210320_080437_create_table_device extends Migration
             'timezone' => $this->string(),
             'last_active' => $this->datetime(),
             'is_online' => $this->integer(1),
+            'db_id' => $this->integer(),
         ]);
 
         $this->createIndex(

@@ -6,6 +6,8 @@ use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
 use common\models\Databases;
+use common\models\Settings;
+use common\models\Device;
 
 /**
  * Databases Controller
@@ -38,6 +40,11 @@ class DatabasesController extends \api\modules\v1\components\ApiController
         }
         
         $databases = Databases::find()->all();
+        $set = Settings::find()->where(['name' => 'devices_per_db'])->one();
+        for ($i=0;$i<count($databases);$i++) {
+            $dd = Device::find()->where(['db_id' => $databases[$i]->id])->all();
+            $databases[$i]->loading = count($dd).'/'.$set->value;
+        }
         
         $data = [];
         $data['success'] = true;

@@ -5,23 +5,20 @@ namespace common\models;
 use Yii;
 
 /**
- * This is the model class for table "databases".
+ * This is the model class for table "firmware".
  *
  * @property integer    $id
  * @property string     $name
- * @property string     $address
- * @property string     $db_name
- * @property string     $db_login
- * @property string     $db_password
+ * @property string     $fields
  */
-class Databases extends \yii\db\ActiveRecord
+class Firmware extends \yii\db\ActiveRecord
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return 'databases';
+        return 'firmware';
     }
 
     /**
@@ -38,12 +35,7 @@ class Databases extends \yii\db\ActiveRecord
     function attributes()
     {
         $attributes = parent::attributes();
-        $attributes[] = 'loading';
+        // $attributes[] = 'monitors';
         return $attributes;
     }
-    
-    // public function getUnit()
-    // {
-    //     return $this->hasOne(DicUnits::className(), ['id' => 'unit_id']);
-    // }
 }

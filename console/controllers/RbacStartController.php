@@ -125,22 +125,34 @@ class RbacStartController extends Controller
         // $deleteModel->description = 'Удаление модели контролера';
         // $auth->add($deleteModel);
 
-        $getDevices = $auth->createPermission('getDevices');
-        $getDevices->description = 'Получение списка устройств';
-        $auth->add($getDevices);
+        // $getDevices = $auth->createPermission('getDevices');
+        // $getDevices->description = 'Получение списка устройств';
+        // $auth->add($getDevices);
 
-        $updateDevice = $auth->createPermission('updateDevice');
-        $updateDevice->description = 'Создание/редактирование устройства';
-        $auth->add($updateDevice);
+        // $updateDevice = $auth->createPermission('updateDevice');
+        // $updateDevice->description = 'Создание/редактирование устройства';
+        // $auth->add($updateDevice);
 
-        $deleteDevice = $auth->createPermission('deleteDevice');
-        $deleteDevice->description = 'Удаление устройства';
-        $auth->add($deleteDevice);
+        // $deleteDevice = $auth->createPermission('deleteDevice');
+        // $deleteDevice->description = 'Удаление устройства';
+        // $auth->add($deleteDevice);
+
+        $getFirmwares = $auth->createPermission('getFirmwares');
+        $getFirmwares->description = 'Получение списка прошивок';
+        $auth->add($getFirmwares);
+
+        $updateFirmware = $auth->createPermission('updateFirmware');
+        $updateFirmware->description = 'Создание/редактирование прошивки';
+        $auth->add($updateFirmware);
+
+        $deleteFirmware = $auth->createPermission('deleteFirmware');
+        $deleteFirmware->description = 'Удаление прошивки';
+        $auth->add($deleteFirmware);
 
 
 
-       $auth->addChild($admin, $getDevices);
-       $auth->addChild($admin, $updateDevice);
-       $auth->addChild($admin, $deleteDevice);
+       $auth->addChild($admin, $getFirmwares);
+       $auth->addChild($admin, $updateFirmware);
+       $auth->addChild($admin, $deleteFirmware);
    }
 }

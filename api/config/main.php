@@ -85,6 +85,17 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
+                    'controller' => 'v1/firmware',
+                    'extraPatterns' => [
+                        'POST upload-firmware' => 'upload-firmware',
+                        'GET get-firmwares' => 'get-firmwares',
+                        'POST save' => 'save',
+                        'GET delete-firmware' => 'delete-firmware',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
                     'controller' => 'v1/settings',
                     'extraPatterns' => [
                         'GET get-settings' => 'get-settings',
