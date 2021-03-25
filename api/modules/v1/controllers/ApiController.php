@@ -75,9 +75,9 @@ class ApiController extends \api\modules\v1\components\ApiController
     
     private function sendSMS($phone, $text)
     {        
-        $u = 'https://vorobyev.stanislav:Ye3cwqI1FMmAIcdQ7IDkghdHpOMz@gate.smsaero.ru/v2/sms/send?number='.$phone.'&text='.$text.'&sign=MyPubs&channel=DIRECT';
+        $u = 'https://marketing:zZgLvOw13DN1TRcoi2E0wi1JZ0Ku@gate.smsaero.ru/v2/sms/send?number='.$phone.'&text='.$text.'&sign=Thermex E.&channel=DIRECT';
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_USERPWD, "vorobyev.stanislav@yandex.ru:Ye3cwqI1FMmAIcdQ7IDkghdHpOMz");
+        curl_setopt($ch, CURLOPT_USERPWD, "marketing@thermexenergy.ru:zZgLvOw13DN1TRcoi2E0wi1JZ0Ku");
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
