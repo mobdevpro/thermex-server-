@@ -30,6 +30,7 @@ use yii\db\Schema;
  * @property string     $last_active
  * @property integer    $is_online
  * @property integer    $db_id
+ * @property integer    $address
  */
 class Device extends \yii\db\ActiveRecord
 {

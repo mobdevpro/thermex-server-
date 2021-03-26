@@ -34,6 +34,7 @@ class m210320_080437_create_table_device extends Migration
             'last_active' => $this->datetime(),
             'is_online' => $this->integer(1),
             'db_id' => $this->integer(),
+            'address' => $this->integer()->defaultValue(2),
         ]);
 
         $this->createIndex(

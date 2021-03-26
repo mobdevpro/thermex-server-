@@ -62,6 +62,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $firmware_id = $params['firmware_id'];
         $serial = $params['serial'];
         $imei = $params['imei'];
+        $address = $params['address'];
         $partner_id = $params['partner_id'];
         $date_product = $params['date_product'];
         $comment_admin = $params['comment_admin'];
@@ -73,6 +74,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
             $device->firmware_id = $firmware_id;
             $device->serial = $serial;
             $device->imei = $imei;
+            $device->address = $address;
             $device->partner_id = $partner_id;
             $device->date_product = $date_product;
             $device->comment_admin = $comment_admin;
@@ -93,6 +95,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
                 $device->firmware_id = $firmware_id;
                 $device->serial = $serial;
                 $device->imei = $imei;
+                $device->address = $address;
                 $device->partner_id = $partner_id;
                 $device->date_product = $date_product;
                 $device->comment_admin = $comment_admin;
