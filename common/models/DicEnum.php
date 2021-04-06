@@ -5,21 +5,20 @@ namespace common\models;
 use Yii;
 
 /**
- * This is the model class for table "firmware".
+ * This is the model class for table "dic_enum".
  *
  * @property integer    $id
  * @property string     $name
  * @property string     $fields
- * @property string     $firmware
  */
-class Firmware extends \yii\db\ActiveRecord
+class DicEnum extends \yii\db\ActiveRecord
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return 'firmware';
+        return 'dic_enum';
     }
 
     /**

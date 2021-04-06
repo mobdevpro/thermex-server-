@@ -3,20 +3,19 @@
 use yii\db\Migration;
 
 /**
- * Class m210322_055425_create_table_firmware
+ * Class m210401_050635_create_table_dic_enum
  */
-class m210322_055425_create_table_firmware extends Migration
+class m210401_050635_create_table_dic_enum extends Migration
 {
     /**
      * {@inheritdoc}
      */
     public function safeUp()
     {
-        $this->createTable('firmware', [
+        $this->createTable('dic_enum', [
             'id' => $this->primaryKey(),
             'name' => $this->string()->notNull()->unique(),
             'fields' => $this->text(),
-            'firmware' => $this->text(),
         ]);
     }
 
@@ -25,7 +24,7 @@ class m210322_055425_create_table_firmware extends Migration
      */
     public function safeDown()
     {
-        echo "m210322_055425_create_table_firmware cannot be reverted.\n";
+        echo "m210401_050635_create_table_dic_enum cannot be reverted.\n";
 
         return false;
     }
@@ -39,7 +38,7 @@ class m210322_055425_create_table_firmware extends Migration
 
     public function down()
     {
-        echo "m210322_055425_create_table_firmware cannot be reverted.\n";
+        echo "m210401_050635_create_table_dic_enum cannot be reverted.\n";
 
         return false;
     }

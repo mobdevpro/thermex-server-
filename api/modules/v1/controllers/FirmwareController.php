@@ -52,87 +52,94 @@ class FirmwareController extends \api\modules\v1\components\ApiController
     
     }
 
-    private function namedColl($Name,$firmwares){
-
-        for($i=0,$iMax=count($firmwares); $i < $iMax; $i++){
-            if ($Name == $firmwares[$i]['FirmwareName']){
-    
-                $response = 8+$i;
-            }
-        }
-        return $response;
-    }
-
     public function actionUploadFirmware() {
         
-        // if(!empty($_FILES) && !$_FILES['file']['error']) {
-        //     if (!file_exists('uploads/firmware/')) {
-        //         mkdir('uploads/firmware/', 0777, true);
-        //     }
+        if (!\Yii::$app->user->can('updateFirmware')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
 
-        //     $filename = 'firmware-'.date('Y-m-d H:i:s', time());
-        //     $output_file = 'uploads/firmware/'.$filename;
-        //     if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
-                
-        //     }
-        // }
+        $params = Yii::$app->request->post();
+        $id = $params['id'];
 
-        if ( $xlsx = SimpleXLSX::parse('uploads/firmware/firmware-2021-03-22 10:44:51') ) {
-            // print_r( $xlsx->rows() );
-            foreach ($xlsx->rows() as $element){
-                if(($element[7]!=='')){
-                    $ClearRows[]=$element;
+        $fw = Firmware::find()->where(['id' => $id])->one();
+        if (empty($fw)) {
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_BAD_DATA);
+        }
+
+        if(!empty($_FILES) && !$_FILES['file']['error']) {
+            if (!file_exists('uploads/firmware/')) {
+                mkdir('uploads/firmware/', 0777, true);
+            }
+
+            $filename = 'firmware-'.date('Y-m-d H:i:s', time());
+            $output_file = 'uploads/firmware/'.$filename;
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
+                $data = [];
+                $data['success'] = false;
+                $data['status'] = 400;
+                $data['message'] = 'Файл не удалось распарсить!';
+                return $data;
+            }
+
+            if ( $xlsx = SimpleXLSX::parse($output_file) ) {
+
+                $firmware = [];
+                $fields = [];
+                $count = 0;
+                foreach ($xlsx->rows() as $element) {
+                    if ($count == 0) {
+                        $count++;
+                        continue;
+                    }
+
+                    if ($element[2] == '') {
+                        if (!empty($obj)) {
+                            array_push($firmware, $obj);
+                        }
+                        $obj = new \stdClass();
+                        $obj->label = $element[0];
+                        $obj->description = $element[1];
+                        $obj->data = [];
+                    } else {
+                        $ll = new \stdClass();
+                        $ll->label = $element[0];
+                        $ll->description = $element[1];
+                        $ll->min = $element[2];
+                        $ll->max = $element[3];
+                        $ll->default = $element[4];
+                        $ll->type = $element[5];
+                        $ll->devision = $element[6];
+                        $ll->mode = $element[7];
+                        $ll->address = $element[8];
+
+                        array_push($obj->data, $ll);
+                        $fields[$element[8]] = $ll;
+                    }
                 }
-            }
 
-            // Определяем количество имеющихся прошивок
-            $firmware=[];
-            for($i=8,$imax=count($ClearRows[0]); $i < $imax; $i++){
-                array_push($firmware,array('FirmwareName'=>$ClearRows[0][$i]));
-            }
-            // Определяем количество имеющихся прошивок
-            // В каждую прошивку по очереди начинаем заносить данные;
-            for ($i=1,$imax = count($ClearRows); $i < $imax; $i++){
-                for ($f=0,$fmax=count($firmware); $f < $fmax; $f++){
-                    $firmware[$f]['Data'][]=array(
-                        'label'=>$ClearRows[$i][0],
-                        'description'=>$ClearRows[$i][1],
-                        'min'=>$ClearRows[$i][2],
-                        'max'=>$ClearRows[$i][3],
-                        'default'=>$ClearRows[$i][4],
-                        'type'=>$ClearRows[$i][5],
-                        'division'=>$ClearRows[$i][6],
-                        'mode'=>$ClearRows[$i][7],
-                        'address'=>$ClearRows[$i][$this->namedColl($firmware[$f]['FirmwareName'],$firmware)]
-                    );
-                }
+                $fw->firmware = json_encode($firmware);
+                $fw->fields = json_encode($fields);
 
-            }
-
-            for ($i=0;$i<count($firmware);$i++) {
-                $fw = Firmware::find()->where(['name' => $firmware[$i]['FirmwareName']])->one();
-                if (!empty($fw)) {
-                    // Yii::$app->db->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
-                    // $command = Yii::$app->db->createCommand('DROP TABLE IF EXISTS firmware_data_'.$fw->id.';CREATE  TABLE IF NOT EXISTS firmware_data_'.$fw->id.' (
-                    //     `id` int(11) NOT NULL auto_increment,
-                    //     `name` VARCHAR(150) NOT NULL,
-                    //     `device_id` INT(11) not NULL,
-                    //     PRIMARY KEY (`id`))
-                    //     ENGINE = InnoDB;');
-                    // $command->execute();
-                    // Yii::$app->db->pdoStatement->closeCursor();
-                    // $command->closeCursor();
-                    $fw->fields = json_encode($firmware[$i]['Data']);
-                    $fw->save();
+                if ($fw->save()) {
+                    $data = [];
+                    $data['success'] = true;
+                    $data['status'] = 200;
+                    return $data;
                 } else {
-                    $fw = new Firmware();
-                    $fw->name = $firmware[$i]['FirmwareName'];
-                    $fw->fields = json_encode($firmware[$i]['Data']);
-                    $fw->save();
+                    $data = [];
+                    $data['success'] = false;
+                    $data['status'] = 400;
+                    $data['message'] = 'Файл не удалось распарсить!';
+                    return $data;
                 }
+            } else {
+                // echo SimpleXLSX::parseError();
+                $data = [];
+                $data['success'] = false;
+                $data['status'] = 400;
+                $data['message'] = 'Файл не удалось распарсить!';
+                return $data;
             }
-
-            echo'<prE>'; print_r($firmware); echo'</prE>';
         } else {
             // echo SimpleXLSX::parseError();
             $data = [];
@@ -141,11 +148,6 @@ class FirmwareController extends \api\modules\v1\components\ApiController
             $data['message'] = 'Файл не удалось распарсить!';
             return $data;
         }
-
-        // $data = [];
-        // $data['success'] = true;
-        // $data['status'] = 200;
-        // return $data;
     }
     
     public function actionSave() {
@@ -158,12 +160,12 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         
         $id = $params['id'];
         $name = $params['name'];
-        $fields = $params['fields'];
+        $firmware = $params['firmware'];
 
         if($id == 0) {
             $fw = new Firmware();
             $fw->name = $name;
-            $fw->fields = json_encode($fields);
+            $fw->firmware = json_encode($firmware);
             
             if($fw->save()) {
                 $data = [];
@@ -177,6 +179,15 @@ class FirmwareController extends \api\modules\v1\components\ApiController
             $fw = Firmware::find()->where(['id' => $id])->one();
             if(!empty($fw)) {
                 $fw->name = $name;
+                $fw->firmware = json_encode($firmware);
+
+                $fields = [];
+                for ($i=0;$i<count($firmware);$i++) {
+                    for ($y=0;$y<count($firmware[$i]['data']);$y++) {
+                        $fields[$firmware[$i]['data'][$y]['address']] = $firmware[$i]['data'][$y];
+                    }
+                }
+
                 $fw->fields = json_encode($fields);
 
                 if($fw->save()) {
@@ -193,9 +204,9 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         }
     }
     
-    public function actionDeleteDevice() {
+    public function actionDeleteFirmware() {
         
-        if (!\Yii::$app->user->can('deleteDevice')) {
+        if (!\Yii::$app->user->can('deleteFirmware')) {
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
         
@@ -203,9 +214,9 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         
         if(!empty($params['id'])) {
             $id = $params['id'];
-            $model = DicModels::find()->where(['id' => $id])->one();
-            if(!empty($model)) {
-                if($model->delete()) {
+            $firmware = Firmware::find()->where(['id' => $id])->one();
+            if(!empty($firmware)) {
+                if($firmware->delete()) {
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;

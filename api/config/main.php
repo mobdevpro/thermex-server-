@@ -85,6 +85,16 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
+                    'controller' => 'v1/dic-enum',
+                    'extraPatterns' => [
+                        'GET get-enums' => 'get-enums',
+                        'POST save' => 'save',
+                        'GET delete-enum' => 'delete-enum',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
                     'controller' => 'v1/firmware',
                     'extraPatterns' => [
                         'POST upload-firmware' => 'upload-firmware',

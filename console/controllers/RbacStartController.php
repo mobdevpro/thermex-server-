@@ -137,22 +137,34 @@ class RbacStartController extends Controller
         // $deleteDevice->description = 'Удаление устройства';
         // $auth->add($deleteDevice);
 
-        $getFirmwares = $auth->createPermission('getFirmwares');
-        $getFirmwares->description = 'Получение списка прошивок';
-        $auth->add($getFirmwares);
+        // $getFirmwares = $auth->createPermission('getFirmwares');
+        // $getFirmwares->description = 'Получение списка прошивок';
+        // $auth->add($getFirmwares);
 
-        $updateFirmware = $auth->createPermission('updateFirmware');
-        $updateFirmware->description = 'Создание/редактирование прошивки';
-        $auth->add($updateFirmware);
+        // $updateFirmware = $auth->createPermission('updateFirmware');
+        // $updateFirmware->description = 'Создание/редактирование прошивки';
+        // $auth->add($updateFirmware);
 
-        $deleteFirmware = $auth->createPermission('deleteFirmware');
-        $deleteFirmware->description = 'Удаление прошивки';
-        $auth->add($deleteFirmware);
+        // $deleteFirmware = $auth->createPermission('deleteFirmware');
+        // $deleteFirmware->description = 'Удаление прошивки';
+        // $auth->add($deleteFirmware);
+
+        $getEnums = $auth->createPermission('getEnums');
+        $getEnums->description = 'Получение списка перечисляемых типов';
+        $auth->add($getEnums);
+
+        $updateEnum = $auth->createPermission('updateEnum');
+        $updateEnum->description = 'Создание/редактирование перечисляемого типа';
+        $auth->add($updateEnum);
+
+        $deleteEnum = $auth->createPermission('deleteEnum');
+        $deleteEnum->description = 'Удаление перечисляемого типа';
+        $auth->add($deleteEnum);
 
 
 
-       $auth->addChild($admin, $getFirmwares);
-       $auth->addChild($admin, $updateFirmware);
-       $auth->addChild($admin, $deleteFirmware);
+       $auth->addChild($admin, $getEnums);
+       $auth->addChild($admin, $updateEnum);
+       $auth->addChild($admin, $deleteEnum);
    }
 }
