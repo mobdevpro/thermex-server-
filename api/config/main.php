@@ -98,6 +98,7 @@ return [
                     'controller' => 'v1/firmware',
                     'extraPatterns' => [
                         'POST upload-firmware' => 'upload-firmware',
+                        'POST upload-alarm' => 'upload-alarm',
                         'GET get-firmwares' => 'get-firmwares',
                         'POST save' => 'save',
                         'GET delete-firmware' => 'delete-firmware',

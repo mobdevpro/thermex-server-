@@ -17,6 +17,8 @@ class m210322_055425_create_table_firmware extends Migration
             'name' => $this->string()->notNull()->unique(),
             'fields' => $this->text(),
             'firmware' => $this->text(),
+            'fields_a' => $this->text(),
+            'alarm' => $this->text(),
         ]);
     }
 

@@ -108,8 +108,8 @@ class FirmwareController extends \api\modules\v1\components\ApiController
                         $ll->max = $element[3];
                         $ll->default = $element[4];
                         $ll->type = $element[5];
-                        $ll->devision = $element[6];
-                        $ll->mode = $element[7];
+                        $ll->mode = $element[6];
+                        $ll->division = $element[7];
                         $ll->address = $element[8];
 
                         array_push($obj->data, $ll);
@@ -119,6 +119,88 @@ class FirmwareController extends \api\modules\v1\components\ApiController
 
                 $fw->firmware = json_encode($firmware);
                 $fw->fields = json_encode($fields);
+
+                if ($fw->save()) {
+                    $data = [];
+                    $data['success'] = true;
+                    $data['status'] = 200;
+                    return $data;
+                } else {
+                    $data = [];
+                    $data['success'] = false;
+                    $data['status'] = 400;
+                    $data['message'] = 'Файл не удалось распарсить!';
+                    return $data;
+                }
+            } else {
+                // echo SimpleXLSX::parseError();
+                $data = [];
+                $data['success'] = false;
+                $data['status'] = 400;
+                $data['message'] = 'Файл не удалось распарсить!';
+                return $data;
+            }
+        } else {
+            // echo SimpleXLSX::parseError();
+            $data = [];
+            $data['success'] = false;
+            $data['status'] = 400;
+            $data['message'] = 'Файл не удалось распарсить!';
+            return $data;
+        }
+    }
+
+    public function actionUploadAlarm() {
+        
+        if (!\Yii::$app->user->can('updateFirmware')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $params = Yii::$app->request->post();
+        $id = $params['id'];
+
+        $fw = Firmware::find()->where(['id' => $id])->one();
+        if (empty($fw)) {
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_BAD_DATA);
+        }
+
+        if(!empty($_FILES) && !$_FILES['file']['error']) {
+            if (!file_exists('uploads/alarm/')) {
+                mkdir('uploads/alarm/', 0777, true);
+            }
+
+            $filename = 'alarm-'.date('Y-m-d H:i:s', time());
+            $output_file = 'uploads/alarm/'.$filename;
+            if (!move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
+                $data = [];
+                $data['success'] = false;
+                $data['status'] = 400;
+                $data['message'] = 'Файл не удалось распарсить!';
+                return $data;
+            }
+
+            if ( $xlsx = SimpleXLSX::parse($output_file) ) {
+
+                $alarm = [];
+                $fields = [];
+                $count = 0;
+                foreach ($xlsx->rows() as $element) {
+                    if ($count == 0) {
+                        $count++;
+                        continue;
+                    }
+
+                    $obj = new \stdClass();
+                    $obj->label = $element[0];
+                    $obj->description = $element[1];
+                    $obj->is_alarm = $element[2];
+                    $obj->address = $element[4];
+
+                    array_push($alarm, $obj);
+                }
+
+                $fw->alarm = json_encode($alarm);
+                // $fw->fields = json_encode($fields);
 
                 if ($fw->save()) {
                     $data = [];

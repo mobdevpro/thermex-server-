@@ -11,6 +11,8 @@ use Yii;
  * @property string     $name
  * @property string     $fields
  * @property string     $firmware
+ * @property string     $fields_a
+ * @property string     $alarm
  */
 class Firmware extends \yii\db\ActiveRecord
 {
