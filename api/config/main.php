@@ -102,6 +102,7 @@ return [
                         'GET get-firmwares' => 'get-firmwares',
                         'POST save' => 'save',
                         'GET delete-firmware' => 'delete-firmware',
+                        'GET test' => 'test',
                     ]
                 ],
                 [

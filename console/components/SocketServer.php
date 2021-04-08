@@ -7,66 +7,21 @@ use Ratchet\ConnectionInterface;
 use Ratchet\RFC6455\Messaging\FrameInterface;
 use common\models\User;
 use common\models\Device;
+use console\components\Singleton;
+use console\controllers\Helper;
 
 class SocketServer implements MessageComponentInterface
 {
     public $modems;
-    
+    var $singleton;
+
     public function __construct()
     {
+        $this->singleton = Singleton::getInstance();
         $this->modems = [];
         // $this->enableKeepAlive = false;
     }
 
-    private static function crc16($msg)
-    {
-        $data = pack('H*',$msg);
-        $crc = 0xFFFF;
-        for ($i = 0; $i < strlen($data); $i++)
-        {
-            $crc ^=ord($data[$i]);
-
-            for ($j = 8; $j !=0; $j--)
-            {
-                if (($crc & 0x0001) !=0)
-                {
-                    $crc >>= 1;
-                    $crc ^= 0xA001;
-                }
-                else $crc >>= 1;
-            }
-        }
-        return $crc;
-    }
-
-    private static function BuildReadRequest($uid, $address, $count) {
-
-        $address = 0xffff & $address;
-        $count = 0xffff & $count;
-        $uid = 0xff & $uid;
-
-        $command = bin2hex(pack('C', $uid)).'03'.bin2hex(pack('n', $address)).bin2hex(pack('n', $count));
-        $crc = self::crc16($command);
-        $crc1 = substr(bin2hex(pack('n', (($crc & 0xff00) >> 8))), -2);
-        $crc2 = substr(bin2hex(pack('n', (($crc & 0xff)))), -2);
-        $command = $command.$crc2.$crc1;
-        return $command;
-    }
-
-    private static function BuildWriteRequest($uid, $address, $value) {
-
-        $address = 0xffff & $address;
-        $value = 0xffff & $value;
-        $uid = 0xff & $uid;
-
-        $command = bin2hex(pack('C', $uid)).'10'.bin2hex(pack('n', $address)).'0001'.'02'.bin2hex(pack('n', $value));
-        $crc = self::crc16($command);
-        $crc1 = substr(bin2hex(pack('n', (($crc & 0xff00) >> 8))), -2);
-        $crc2 = substr(bin2hex(pack('n', (($crc & 0xff)))), -2);
-        $command = $command.$crc2.$crc1;
-        return $command;
-    }
-   
     public function onOpen(ConnectionInterface $conn)
     {
         echo "New connection! ({$conn->resourceId})\n";
@@ -88,9 +43,38 @@ class SocketServer implements MessageComponentInterface
                 $device->is_online = 1;
                 $device->save();
                 $this->modems[$from->resourceId]->device = $device;
-                echo 'Законектился : '.$this->modems[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
+                echo 'Законнектился : '.$this->modems[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
+                
+                $address = Helper::getAddresses($device);
+
+                if ($address == null) {
+                    echo 'not found address';
+                    // if (array_key_exists($from->resourceId, $this->modems)) {
+                    //     unset($this->modems[$from->resourceId]);
+                    // }
+                    $from->close();
+                    Yii::$app->db->close();
+                    return;
+                }
+
+                for ($i=0;$i<count($address->{'3000'});$i++) {
+                    $priority = -(time() + 15);
+                    $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
+                    $obj = new \stdClass();
+                    $obj->device = $device;
+                    $obj->socket = $from;
+                    $obj->data = $data;
+                    $obj->start = $address->{'3000'}[$i]->start;
+                    $obj->length = $address->{'3000'}[$i]->length;
+                    $obj->time = -$priority;
+                    $obj->command = 'read';
+                    $this->singleton->insert($obj, $priority);
+                }
             } else {
-                unset($this->modems[$from->resourceId]);
+                echo 'not found device'.PHP_EOL;
+                // if (array_key_exists($from->resourceId, $this->modems)) {
+                //     unset($this->modems[$from->resourceId]);
+                // }
                 $from->close();
             }
             Yii::$app->db->close();
@@ -103,27 +87,36 @@ class SocketServer implements MessageComponentInterface
                 $device->is_online = 1;
                 $device->save();
                 $this->modems[$from->resourceId]->device = $device;
-
-                if ($device->id == 1) {
-                    // if ($this->modems[$from->resourceId]->command != null) {
-                    //     $data = self::BuildWriteRequest(3005, 315);
-                    //     $this->modems[$from->resourceId]->command = null;
-                    //     $this->modems[$from->resourceId]->socket->send(hex2bin($data));
-                    // } else {
-
-                    // }
-                }
             } else {
                 unset($this->modems[$from->resourceId]);
                 $from->close();
             }
             Yii::$app->db->close();
             echo 'device: '.$this->modems[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
+            $obj = $this->modems[$from->resourceId]->command;
+
+            $this->singleton->extract();
+
+            if ($obj->command == 'read') {
+                $time = time() + 15;
+                $obj->time = $time;
+                $this->modems[$from->resourceId]->command = null;
+                $this->singleton->insert($obj, -$time);
+            }
         }
     }
 
     public function onClose(ConnectionInterface $conn)
     {
+        Yii::$app->db->open();
+        
+        $device = Device::find()->where(['id' => $this->modems[$conn->resourceId]->device->id])->one();
+        $device->last_active = date('Y-m-d H:i:s', time());
+        $device->is_online = 0;
+        $device->save();
+
+        Yii::$app->db->close();
+
         unset($this->modems[$conn->resourceId]);
         echo "Connection {$conn->resourceId} has disconnected\n";
     }

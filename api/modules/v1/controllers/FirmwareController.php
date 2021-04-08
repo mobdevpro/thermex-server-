@@ -20,7 +20,7 @@ class FirmwareController extends \api\modules\v1\components\ApiController
     public $modelClass = 'api\modules\v1\models\Firmware';
     
     var $unauthorized_actions = [
-            
+        'test',
     ];
     
     public function behaviors() {
@@ -100,6 +100,7 @@ class FirmwareController extends \api\modules\v1\components\ApiController
                         $obj->label = $element[0];
                         $obj->description = $element[1];
                         $obj->data = [];
+                        // print_r($obj);
                     } else {
                         $ll = new \stdClass();
                         $ll->label = $element[0];
@@ -117,6 +118,11 @@ class FirmwareController extends \api\modules\v1\components\ApiController
                     }
                 }
 
+                if (count($xlsx->rows())) {
+                    array_push($firmware, $obj);
+                }
+
+                // die;
                 $fw->firmware = json_encode($firmware);
                 $fw->fields = json_encode($fields);
 
