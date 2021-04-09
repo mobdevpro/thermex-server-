@@ -73,15 +73,31 @@ class Device extends \yii\db\ActiveRecord
                 ]);
                 $connection->open();
 
-                if ($connection->schema->getTableSchema('test_table_'.$this->id) == null) {
-                    $command = $connection->createCommand('CREATE  TABLE IF NOT EXISTS test_table_'.$this->id.' (
-                        `id` int(11) NOT NULL auto_increment,
-                        `name` VARCHAR(150) NOT NULL,
-                        `device_id` INT(11) not NULL,
-                        PRIMARY KEY (`id`))
-                        ENGINE = InnoDB;');
-                    $command->execute();
-                    // echo 'not exist';die;
+                if ($connection->schema->getTableSchema('device_data_'.$this->id) == null) {
+                    if ($this->firmware_id != null) {
+                        $fw = Firmware::find()->where(['id' => $this->firmware_id])->one();
+                        if (!empty($fw)) {
+                            $fields = json_decode($fw->fields);
+                            $str = 'CREATE  TABLE IF NOT EXISTS device_data_'.$this->id.' (
+                                `id` int(11) NOT NULL auto_increment,';
+                            $str = $str.'`time` DATETIME,';
+                            $str = $str.'`transaction_id` VARCHAR(30),';
+                            $array = [];
+                            foreach ($fields as $key => $value) {
+                                array_push($array, (int)$key);
+                                
+                            }
+                            asort($array);
+
+                            for ($i=0;$i<count($array);$i++) {
+                                $str = $str.'`'.$array[$i].'` VARCHAR(10),';
+                            }
+
+                            $str = $str.'PRIMARY KEY (`id`)) ENGINE = InnoDB;';
+                            $command = $connection->createCommand($str);
+                            $command->execute();
+                        }
+                    }
                 } else {
                     // echo 'exist';die;
                 }
@@ -117,9 +133,4 @@ class Device extends \yii\db\ActiveRecord
         // $attributes[] = 'monitors';
         return $attributes;
     }
-    
-    // public function getUnit()
-    // {
-    //     return $this->hasOne(DicUnits::className(), ['id' => 'unit_id']);
-    // }
 }

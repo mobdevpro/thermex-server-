@@ -57,6 +57,7 @@ class SocketServer implements MessageComponentInterface
                     return;
                 }
 
+                $transaction_id = time();
                 for ($i=0;$i<count($address->{'3000'});$i++) {
                     $priority = -(time() + 15);
                     $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
@@ -66,8 +67,11 @@ class SocketServer implements MessageComponentInterface
                     $obj->data = $data;
                     $obj->start = $address->{'3000'}[$i]->start;
                     $obj->length = $address->{'3000'}[$i]->length;
+                    $obj->addresses = $address->{'3000'}[$i]->addresses;
                     $obj->time = -$priority;
                     $obj->command = 'read';
+                    $obj->transaction_id = $transaction_id;
+                    $obj->count = 1;
                     $this->singleton->insert($obj, $priority);
                 }
             } else {
@@ -88,7 +92,7 @@ class SocketServer implements MessageComponentInterface
                 $device->save();
                 $this->modems[$from->resourceId]->device = $device;
             } else {
-                unset($this->modems[$from->resourceId]);
+                // unset($this->modems[$from->resourceId]);
                 $from->close();
             }
             Yii::$app->db->close();
@@ -97,9 +101,12 @@ class SocketServer implements MessageComponentInterface
 
             $this->singleton->extract();
 
+            Helper::getAnswer($this->modems[$from->resourceId]->command, $msg);
+
             if ($obj->command == 'read') {
                 $time = time() + 15;
                 $obj->time = $time;
+                $obj->count = $obj->count + 1;
                 $this->modems[$from->resourceId]->command = null;
                 $this->singleton->insert($obj, -$time);
             }

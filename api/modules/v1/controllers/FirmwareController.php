@@ -35,6 +35,38 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         parent::init();
         Yii::$app->response->format = Response::FORMAT_JSON;
     }
+
+    public function actionTest() {
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+
+        $device = Device::find()->where(['id' => $id])->one();
+
+        if (!empty($device)) {
+            if ($device->firmware_id != null) {
+                $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+                if (!empty($fw)) {
+                    $fields = json_decode($fw->fields);
+                    $labels = [];
+                    $str = 'CREATE  TABLE IF NOT EXISTS device_data_'.$id.' (
+                        `id` int(11) NOT NULL auto_increment,';
+                    foreach ($fields as $key => $value) {
+                        // array_push($labels, $value->label);
+                        $str = $str.'`'.$value->label.'` VARCHAR(10),';
+                    }
+                    // print_r($labels);
+                    $str = $str.'PRIMARY KEY (`id`)) ENGINE = InnoDB;';
+                    echo $str;
+                } else {
+                    throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_BAD_DATA);
+                }
+            } else {
+                throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_BAD_DATA);
+            }
+        } else {
+            throw new \yii\web\HttpException(400, 'Устройство не найдено!', User::ERROR_BAD_DATA);
+        }
+    }
     
     public function actionGetFirmwares() {
         

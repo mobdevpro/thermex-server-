@@ -9,6 +9,7 @@ use console\components\SocketServer;
 use Eole\Sandstone;
 use common\models\Device;
 use common\models\Firmware;
+use common\models\DeviceData;
 
 class Helper
 {
@@ -107,24 +108,32 @@ class Helper
 
                 $len3000 = $a3000->max - $a3000->min;
                 $start3000 = $a3000->min - 1;
+                $offset = 0;
                 
-                for ($i=0;$i<ceil(($a3000->max - $a3000->min)/124);$i++) {
+                for ($i=0;$i<ceil(($a3000->max - $a3000->min)/62);$i++) {
 
-                    if ($len3000 >= 124) {
-                        $ll = 124;
+                    if ($len3000 >= 62) {
+                        $ll = 62;
                     } else {
-                        $ll = $len3000 % 124;
+                        $ll = $len3000 % 62;
                     }
                     $obj->{'3000'}[$i] = new \stdClass();
                     $obj->{'3000'}[$i]->start = $start3000;
                     $obj->{'3000'}[$i]->length = $ll;
-                    $start3000 = $start3000 + 124;
-                    $len3000 = $len3000 - 124;
+                    $ar = [];
+                    for ($y=0;$y<$ll;$y++) {
+                        array_push($ar, $start3000 + $y);
+                    }
+                    $obj->{'3000'}[$i]->addresses = $ar;//array_slice($adr[0], $offset, $ll);
+                    $start3000 = $start3000 + 62;
+                    $len3000 = $len3000 - 62;
+                    $offset = $offset + $ll;
                 }
 
                 $obj->{'8000'} = new \stdClass();
                 $obj->{'8000'}->start = $a8000->min - 1;
                 $obj->{'8000'}->length = $a8000->max - $a8000->min;
+                $obj->{'8000'}->addresses = $adr[1];
                 
                 Yii::$app->db->close();
                 return $obj;
@@ -138,6 +147,47 @@ class Helper
     }
 
     public static function getAnswer($task, $answer) {
-        
+
+        $answer = bin2hex($answer);
+        if ($task->command == 'read') {
+            if ($answer[2].$answer[3] == '83') {
+                echo 'ошибка чтения'.PHP_EOL;
+            } else {
+                echo 'l: '.(base_convert($answer[4].$answer[5], 16, 10)/2).PHP_EOL;
+                $l = base_convert($answer[4].$answer[5], 16, 10)/2;
+                $data = substr($answer, 6);
+
+                echo 'l: '.$l.' str: '.strlen($data).PHP_EOL;
+                $obj = new \stdClass();
+                for ($i=0;$i<$l;$i++) {
+                    $obj->{$task->addresses[$i]} = substr($data, $i*4, 4);
+                    // echo 'i: '.$i.' address: '.$task->addresses[$i].' value: '.substr($data, $i*4, 4).PHP_EOL;
+                }
+
+                Yii::$app->db->open();
+                $fw = Firmware::find()->where(['id' => $task->device->firmware_id])->one();
+                $fields = json_decode($fw->fields);
+                Yii::$app->db->close();
+                $dd = new DeviceData($task->device);
+                $conn = $dd->getDeviceDb();
+                $conn->open();
+                $transaction_id = $task->transaction_id.'_'.$task->count;
+                $command = $conn->createCommand('select * from '.$dd->table_name.' where transaction_id like "'.$transaction_id.'"');
+                $row = $command->query();
+                // $dd = $dd->findTransaction($task->transaction_id.'_'.$task->count.PHP_EOL);
+                //::find()->where(['transaction_id' => $task->transaction_id.'_'.$task->count])->one();
+
+                if (empty($row)) {
+                    echo 'not exist '.$transaction_id.PHP_EOL;
+                    $dd = DeviceData($task->device);
+                    $dd->transaction_id = $task->transaction_id.'_'.$task->count;
+                } else {
+                    echo 'exist '.$transaction_id.PHP_EOL;
+                }
+                // $dd->{'3014'} = 1;
+                $dd->save();
+                $conn->close();
+            }
+        }
     }
 }
