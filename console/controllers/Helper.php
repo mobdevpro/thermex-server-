@@ -130,10 +130,32 @@ class Helper
                     $offset = $offset + $ll;
                 }
 
-                $obj->{'8000'} = new \stdClass();
-                $obj->{'8000'}->start = $a8000->min - 1;
-                $obj->{'8000'}->length = $a8000->max - $a8000->min;
-                $obj->{'8000'}->addresses = $adr[1];
+                // $obj = new \stdClass();
+                $obj->{'8000'} = [];
+
+                $len8000 = $a8000->max - $a8000->min;
+                $start8000 = $a8000->min - 1;
+                $offset = 0;
+                
+                for ($i=0;$i<ceil(($a8000->max - $a8000->min)/62);$i++) {
+
+                    if ($len8000 >= 62) {
+                        $ll = 62;
+                    } else {
+                        $ll = $len8000 % 62;
+                    }
+                    $obj->{'8000'}[$i] = new \stdClass();
+                    $obj->{'8000'}[$i]->start = $start8000;
+                    $obj->{'8000'}[$i]->length = $ll;
+                    $ar = [];
+                    for ($y=0;$y<$ll;$y++) {
+                        array_push($ar, $start8000 + $y);
+                    }
+                    $obj->{'8000'}[$i]->addresses = $ar;//array_slice($adr[0], $offset, $ll);
+                    $start8000 = $start8000 + 62;
+                    $len8000 = $len8000 - 62;
+                    $offset = $offset + $ll;
+                }
                 
                 Yii::$app->db->close();
                 return $obj;
@@ -153,40 +175,67 @@ class Helper
             if ($answer[2].$answer[3] == '83') {
                 echo 'ошибка чтения'.PHP_EOL;
             } else {
-                echo 'l: '.(base_convert($answer[4].$answer[5], 16, 10)/2).PHP_EOL;
+                echo 'getAnswer start: '.date('Y-m-d H:i:s').PHP_EOL;
                 $l = base_convert($answer[4].$answer[5], 16, 10)/2;
                 $data = substr($answer, 6);
 
-                echo 'l: '.$l.' str: '.strlen($data).PHP_EOL;
                 $obj = new \stdClass();
                 for ($i=0;$i<$l;$i++) {
-                    $obj->{$task->addresses[$i]} = substr($data, $i*4, 4);
-                    // echo 'i: '.$i.' address: '.$task->addresses[$i].' value: '.substr($data, $i*4, 4).PHP_EOL;
+                    $vv = unpack("s", pack("s", hexdec(substr($data, $i*4, 4))));
+                    // echo 'ff06 - '.reset($vv).PHP_EOL;
+                    $obj->{$task->addresses[$i] + 1} = reset($vv);//base_convert(substr($data, $i*4, 4), 16, 10);
                 }
 
                 Yii::$app->db->open();
                 $fw = Firmware::find()->where(['id' => $task->device->firmware_id])->one();
-                $fields = json_decode($fw->fields);
+                $fields = json_decode($fw->fields, true);
                 Yii::$app->db->close();
-                $dd = new DeviceData($task->device);
-                $conn = $dd->getDeviceDb();
+                DeviceData::setDevice($task->device);
+                $conn = DeviceData::getDb();
                 $conn->open();
                 $transaction_id = $task->transaction_id.'_'.$task->count;
-                $command = $conn->createCommand('select * from '.$dd->table_name.' where transaction_id like "'.$transaction_id.'"');
-                $row = $command->query();
-                // $dd = $dd->findTransaction($task->transaction_id.'_'.$task->count.PHP_EOL);
-                //::find()->where(['transaction_id' => $task->transaction_id.'_'.$task->count])->one();
-
-                if (empty($row)) {
-                    echo 'not exist '.$transaction_id.PHP_EOL;
-                    $dd = DeviceData($task->device);
-                    $dd->transaction_id = $task->transaction_id.'_'.$task->count;
-                } else {
-                    echo 'exist '.$transaction_id.PHP_EOL;
+                $dd = DeviceData::find()->where(['transaction_id' => $transaction_id])->one();
+                
+                if (empty($dd)) {
+                    $dd = new DeviceData();
+                    $dd->transaction_id = $transaction_id;
+                    $dd->time = date('Y-m-d H:i:s', time());
                 }
-                // $dd->{'3014'} = 1;
+                // print_r($fields);
+                foreach ($obj as $key => $value) {
+                    if (array_key_exists($key, $fields)) {
+                        // echo ' key: '.$key.' division: '.$fields[$key]['division'].' value: '.$value;
+                        if ($fields[$key]['division'] === 10) {
+                            $value = (float)($value/10);
+                        }
+                        // echo ' after: '.$value;
+                        $dd->{$key} = $value;
+                    }
+                }
+
+                DeviceData::setConnection(Yii::$app->db);
+                Yii::$app->db->open();
+                $dd = DeviceData::find()->one();
+                
+                if (empty($dd)) {
+                    $dd = new DeviceData();
+                }
+                // print_r($fields);
+                foreach ($obj as $key => $value) {
+                    if (array_key_exists($key, $fields)) {
+                        // echo ' key: '.$key.' division: '.$fields[$key]['division'].' value: '.$value;
+                        if ($fields[$key]['division'] === 10) {
+                            $value = (float)($value/10);
+                        }
+                        // echo ' after: '.$value;
+                        $dd->{$key} = $value;
+                    }
+                }
+                
+                $dd->time = date('Y-m-d H:i:s', time());
                 $dd->save();
-                $conn->close();
+                Yii::$app->db->close();
+                echo 'getAnswer end: '.date('Y-m-d H:i:s').PHP_EOL;
             }
         }
     }

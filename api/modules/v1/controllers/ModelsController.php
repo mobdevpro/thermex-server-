@@ -57,6 +57,7 @@ class ModelsController extends \api\modules\v1\components\ApiController
         
         $id = $params['id'];
         $name = $params['name'];
+        $image = $params['image'];
 
         if(!empty($name)) {
             if($id == 0) {
@@ -64,6 +65,21 @@ class ModelsController extends \api\modules\v1\components\ApiController
                 $model->name = $name;
                 
                 if($model->save()) {
+
+                    if(!empty($image)) {
+                        if (!file_exists('uploads/models/')) {
+                            mkdir('uploads/models/', 0777, true);
+                        }
+                        $time = time();
+                        $uploadfile = 'uploads/models/model-'.$model->id;
+                        list($type, $data) = explode(';', $image);
+                        list(, $data)      = explode(',', $data);
+                        $data = base64_decode($data);
+                        file_put_contents($uploadfile, $data);
+                        $model->image = 'model-'.$model->id;
+                        $model->save();
+                    }
+
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;
@@ -75,6 +91,19 @@ class ModelsController extends \api\modules\v1\components\ApiController
                 $model = DicModels::find()->where(['id' => $id])->one();
                 if(!empty($model)) {
                     $model->name = $name;
+
+                    if(!empty($image)) {
+                        if (!file_exists('uploads/models/')) {
+                            mkdir('uploads/models/', 0777, true);
+                        }
+                        $time = time();
+                        $uploadfile = 'uploads/models/model-'.$model->id;
+                        list($type, $data) = explode(';', $image);
+                        list(, $data)      = explode(',', $data);
+                        $data = base64_decode($data);
+                        file_put_contents($uploadfile, $data);
+                        $model->image = 'model-'.$model->id;
+                    }
 
                     if($model->save()) {
                         $data = [];

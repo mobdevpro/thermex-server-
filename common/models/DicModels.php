@@ -9,6 +9,7 @@ use Yii;
  *
  * @property integer    $id
  * @property string     $name
+ * @property string     $image
  */
 class DicModels extends \yii\db\ActiveRecord
 {

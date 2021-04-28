@@ -39,7 +39,7 @@ class SocketServer implements MessageComponentInterface
             $device = Device::find()->where(['imei' => $msg])->one();
             if (!empty($device)) {
                 date_default_timezone_set('UTC');
-                $device->last_active = date('Y-m-d H:i:s', time());
+                $device->connection_time = date('Y-m-d H:i:s', time());
                 $device->is_online = 1;
                 $device->save();
                 $this->modems[$from->resourceId]->device = $device;
@@ -74,6 +74,24 @@ class SocketServer implements MessageComponentInterface
                     $obj->count = 1;
                     $this->singleton->insert($obj, $priority);
                 }
+
+                for ($i=0;$i<count($address->{'8000'});$i++) {
+                    $priority = -(time() + 15);
+                    $data = Helper::BuildReadRequest($device->address, $address->{'8000'}[$i]->start, $address->{'8000'}[$i]->length);
+                    $obj = new \stdClass();
+                    $obj->device = $device;
+                    $obj->socket = $from;
+                    $obj->data = $data;
+                    $obj->start = $address->{'8000'}[$i]->start;
+                    $obj->length = $address->{'8000'}[$i]->length;
+                    $obj->addresses = $address->{'8000'}[$i]->addresses;
+                    $obj->time = -$priority;
+                    $obj->command = 'read';
+                    $obj->transaction_id = $transaction_id;
+                    $obj->count = 1;
+                    $this->singleton->insert($obj, $priority);
+                }
+
             } else {
                 echo 'not found device'.PHP_EOL;
                 // if (array_key_exists($from->resourceId, $this->modems)) {
@@ -118,7 +136,7 @@ class SocketServer implements MessageComponentInterface
         Yii::$app->db->open();
         
         $device = Device::find()->where(['id' => $this->modems[$conn->resourceId]->device->id])->one();
-        $device->last_active = date('Y-m-d H:i:s', time());
+        $device->disconnection_time = date('Y-m-d H:i:s', time());
         $device->is_online = 0;
         $device->save();
 

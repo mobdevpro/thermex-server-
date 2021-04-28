@@ -65,7 +65,15 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $address = $params['address'];
         $partner_id = $params['partner_id'];
         $date_product = $params['date_product'];
+        $date_build = $params['date_build'];
+        $date_shipment = $params['date_shipment'];
         $comment_admin = $params['comment_admin'];
+        $connection = $params['connection'];
+        $mount_city = $params['mount_city'];
+        $mount_fias = $params['mount_fias'];
+        $timezone = $params['timezone'];
+        $status = $params['status'];
+
 
         if($id == 0) {
             $device = new Device();
@@ -78,6 +86,13 @@ class DeviceController extends \api\modules\v1\components\ApiController
             $device->partner_id = $partner_id;
             $device->date_product = $date_product;
             $device->comment_admin = $comment_admin;
+            $device->date_build = $date_build;
+            $device->date_shipment = $date_shipment;
+            $device->connection = $connection;
+            $device->mount_city = $mount_city;
+            $device->mount_fias = $mount_fias;
+            $device->timezone = $timezone;
+            $device->status = $status;
             
             if($device->save()) {
                 $data = [];
@@ -99,6 +114,13 @@ class DeviceController extends \api\modules\v1\components\ApiController
                 $device->partner_id = $partner_id;
                 $device->date_product = $date_product;
                 $device->comment_admin = $comment_admin;
+                $device->date_build = $date_build;
+                $device->date_shipment = $date_shipment;
+                $device->connection = $connection;
+                $device->mount_city = $mount_city;
+                $device->mount_fias = $mount_fias;
+                $device->timezone = $timezone;
+                $device->status = $status;
 
                 if($device->save()) {
                     $data = [];
