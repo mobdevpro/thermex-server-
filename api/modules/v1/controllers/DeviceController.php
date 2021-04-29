@@ -7,6 +7,8 @@ use yii\web\Response;
 use common\models\User;
 use common\models\DicModels;
 use common\models\Device;
+use common\models\Firmware;
+use common\models\DeviceData;
 
 /**
  * Device Controller
@@ -39,6 +41,46 @@ class DeviceController extends \api\modules\v1\components\ApiController
         }
         
         $devices = Device::find()->all();
+
+        for ($i=0;$i<count($devices);$i++) {
+            if ($devices[$i]->firmware_id != null) {
+                $fw = Firmware::find()->where(['id' => $devices[$i]->firmware_id])->one();
+                if (!empty($fw)) {
+                    if (Yii::$app->db->schema->getTableSchema('device_data_'.$devices[$i]->id) != null) {
+                        DeviceData::setDevice($devices[$i]);
+                        DeviceData::setConnection(Yii::$app->db);
+                        Yii::$app->db->open();
+                        $dd = DeviceData::find()->one();
+                        Yii::$app->db->close();
+                        // print_r($dd);die;
+                        if (!empty($dd)) {
+                            $firmware = json_decode($fw->firmware);
+                            foreach ($firmware as $key => $value) {
+                                for ($y=0;$y<count($firmware[$key]->data);$y++) {
+                                    $address = $firmware[$key]->data[$y]->address;
+                                    // echo 'v: '.$dd->{$address};
+                                    // if (property_exists($dd, (string)$address)) {
+                                        $firmware[$key]->data[$y]->value = $dd->{$address};
+                                    // } else {
+                                        // $firmware[$key]->data[$y]->value = null;
+                                    // }
+                                    // print_r($firmware[$key]->data[$y]);die;
+                                }
+                            }
+                            $devices[$i]->data = $firmware;
+                        } else {
+                            $devices[$i]->data = null;
+                        }
+                    } else {
+                        $devices[$i]->data = null;
+                    }
+                } else {
+                    $devices[$i]->data = null;
+                }
+            } else {
+                $devices[$i]->data = null;
+            }
+        }
         
         $data = [];
         $data['success'] = true;

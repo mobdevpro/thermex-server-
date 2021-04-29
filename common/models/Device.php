@@ -154,7 +154,7 @@ class Device extends \yii\db\ActiveRecord
     function attributes()
     {
         $attributes = parent::attributes();
-        // $attributes[] = 'monitors';
+        $attributes[] = 'data';
         return $attributes;
     }
 }

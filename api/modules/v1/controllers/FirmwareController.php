@@ -84,6 +84,25 @@ class FirmwareController extends \api\modules\v1\components\ApiController
     
     }
 
+    public function actionGetFirmware() {
+        
+        if (!\Yii::$app->user->can('getFirmwares')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+        
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+
+        $firmware = Firmware::find()->where(['id' => $id])->one();
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['firmware'] = $firmware;
+        return $data;
+    
+    }
+
     public function actionUploadFirmware() {
         
         if (!\Yii::$app->user->can('updateFirmware')) {

@@ -100,6 +100,7 @@ return [
                         'POST upload-firmware' => 'upload-firmware',
                         'POST upload-alarm' => 'upload-alarm',
                         'GET get-firmwares' => 'get-firmwares',
+                        'GET get-firmware' => 'get-firmware',
                         'POST save' => 'save',
                         'GET delete-firmware' => 'delete-firmware',
                         'GET test' => 'test',
