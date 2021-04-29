@@ -39,8 +39,23 @@ class DeviceController extends \api\modules\v1\components\ApiController
         if (!\Yii::$app->user->can('getDevices')) {
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
+
+        $user = \Yii::$app->user->identity;
         
-        $devices = Device::find()->all();
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        $isAdmin = false;
+        foreach($userAssigned as $userAssign){
+            if ($userAssign->roleName == 'admin') {
+                $isAdmin = true;
+            }
+        }
+
+        if ($isAdmin) {
+            $devices = Device::find()->all();
+        } else {
+            $devices = Device::find()->where(['partner_id' => $user->id])->all();
+        }
+        
 
         for ($i=0;$i<count($devices);$i++) {
             if ($devices[$i]->firmware_id != null) {
@@ -177,6 +192,109 @@ class DeviceController extends \api\modules\v1\components\ApiController
             }
         }
     }
+
+    public function actionSavePartner() {
+        
+        if (!\Yii::$app->user->can('updateDevice')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+        
+        $params = Yii::$app->request->post();
+        
+        $id = $params['id'];
+        $name_partner = $params['name_partner'];
+        $comment_partner = $params['comment_partner'];
+        $connection = $params['connection'];
+        $mount_city = $params['mount_city'];
+        $mount_fias = $params['mount_fias'];
+        $timezone = $params['timezone'];
+        $status = $params['status'];
+
+
+        if($id == 0) {
+            $device = new Device();
+            $device->name_partner = $name_partner;
+            $device->comment_partner = $comment_partner;
+            $device->connection = $connection;
+            $device->mount_city = $mount_city;
+            $device->mount_fias = $mount_fias;
+            $device->timezone = $timezone;
+            $device->status = $status;
+            
+            if($device->save()) {
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+            }
+        } else {
+            $device = Device::find()->where(['id' => $id])->one();
+            if(!empty($device)) {
+                $device->name_partner = $name_partner;
+                $device->comment_partner = $comment_partner;
+                $device->connection = $connection;
+                $device->mount_city = $mount_city;
+                $device->mount_fias = $mount_fias;
+                $device->timezone = $timezone;
+                $device->status = $status;
+
+                if($device->save()) {
+                    $data = [];
+                    $data['success'] = true;
+                    $data['status'] = 200;
+                    return $data;
+                } else {
+                    throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+                }
+            } else {
+                throw new \yii\web\HttpException(400, 'База не найдена!', User::ERROR_BAD_DATA);
+            }
+        }
+    }
+
+    public function actionAddDevicePartner() {
+        
+        if (!\Yii::$app->user->can('updateDevice')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $user = \Yii::$app->user->identity;
+        
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        $isPartner = false;
+        foreach($userAssigned as $userAssign){
+            if ($userAssign->roleName == 'partner') {
+                $isPartner = true;
+            }
+        }
+
+        if (!$isPartner) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+        
+        $params = Yii::$app->request->post();
+        
+        $serial = $params['serial'];
+        $password = $params['password'];
+
+        $device = Device::find()->where(['serial' => $serial, 'password' => $password])->one();
+        if(!empty($device)) {
+            $device->partner_id = $user->id;
+            
+            if($device->save()) {
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+            }
+        } else {
+            throw new \yii\web\HttpException(400, 'Насос не найден!', User::ERROR_BAD_DATA);
+        }
+    }
     
     public function actionDeleteDevice() {
         
@@ -188,9 +306,54 @@ class DeviceController extends \api\modules\v1\components\ApiController
         
         if(!empty($params['id'])) {
             $id = $params['id'];
-            $model = DicModels::find()->where(['id' => $id])->one();
-            if(!empty($model)) {
-                if($model->delete()) {
+            $device = Device::find()->where(['id' => $id])->one();
+            if(!empty($device)) {
+                if($device->delete()) {
+                    $data = [];
+                    $data['success'] = true;
+                    $data['status'] = 200;
+                    return $data;
+                } else {
+                    throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+                }
+            } else {
+                throw new \yii\web\HttpException(400, 'Объект в базе не найден!', User::ERROR_BAD_DATA);
+            }
+        } else {
+            throw new \yii\web\HttpException(400, 'Указаны неверные параметры!', User::ERROR_BAD_DATA);
+        }
+    }
+
+    public function actionDeleteDevicePartner() {
+        
+        if (!\Yii::$app->user->can('deleteDevice')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $user = \Yii::$app->user->identity;
+        
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        $isPartner = false;
+        foreach($userAssigned as $userAssign){
+            if ($userAssign->roleName == 'partner') {
+                $isPartner = true;
+            }
+        }
+
+        if (!$isPartner) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+        
+        $params = Yii::$app->request->get();
+        
+        if(!empty($params['id'])) {
+            $id = $params['id'];
+            $device = Device::find()->where(['id' => $id, 'partner_id' => $user->id])->one();
+            if(!empty($device)) {
+                $device->partner_id = null;
+                $device->name_partner = null;
+                $device->comment_partner = null;
+                if($device->save()) {
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;

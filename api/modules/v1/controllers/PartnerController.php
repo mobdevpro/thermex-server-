@@ -7,6 +7,7 @@ use yii\web\Response;
 use common\models\User;
 use common\models\TestTable1;
 use common\models\Databases;
+use common\models\Device;
 
 /**
  * Partner Controller
@@ -57,7 +58,9 @@ class PartnerController extends \api\modules\v1\components\ApiController
         for ($i=0;$i<count($users);$i++) {
             $user = User::find()->where(['id' => $users[$i]['user_id']])->one();
             if (!empty($user)) {
-                $obj = $user->getPublicProfile();
+                $obj = new \stdClass;
+                $obj->profile = $user->getPublicProfile();
+                $obj->devices = Device::find()->where(['partner_id' => $users[$i]['user_id']])->all();
                 array_push($partners, $obj);
             }
         }

@@ -35,6 +35,7 @@ class SocketServer implements MessageComponentInterface
     public function onMessage(ConnectionInterface $from, $msg)
     {
         if ($this->modems[$from->resourceId]->device == null) {
+            echo 'connect : '.$msg.PHP_EOL;
             Yii::$app->db->open();
             $device = Device::find()->where(['imei' => $msg])->one();
             if (!empty($device)) {

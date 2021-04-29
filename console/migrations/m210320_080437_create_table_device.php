@@ -21,6 +21,8 @@ class m210320_080437_create_table_device extends Migration
             'imei' => $this->string()->notNull()->unique(),
             'password' => $this->string(),
             'name_our' => $this->string(),
+            'name_partner' => $this->string(),
+            'name_user' => $this->string(),
             'date_product' => $this->date(),
             'date_build' => $this->date(),
             'date_shipment' => $this->date(),

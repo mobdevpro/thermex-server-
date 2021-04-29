@@ -16,6 +16,8 @@ use yii\db\Schema;
  * @property string     $imei
  * @property string     $password
  * @property string     $name_our
+ * @property string     $name_partner
+ * @property string     $name_user
  * @property string     $date_product
  * @property string     $date_build
  * @property string     $date_shipment
