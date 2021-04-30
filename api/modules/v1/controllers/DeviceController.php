@@ -368,4 +368,63 @@ class DeviceController extends \api\modules\v1\components\ApiController
             throw new \yii\web\HttpException(400, 'Указаны неверные параметры!', User::ERROR_BAD_DATA);
         }
     }
+
+    public function actionGetDashboard() {
+        
+        if (!\Yii::$app->user->can('getDevices')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $user = \Yii::$app->user->identity;
+        
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        $isAdmin = false;
+        foreach($userAssigned as $userAssign){
+            if ($userAssign->roleName == 'admin') {
+                $isAdmin = true;
+            }
+        }
+
+        if ($isAdmin) {
+            $devices = Device::find()->all();
+        } else {
+            $devices = Device::find()->where(['partner_id' => $user->id])->all();
+        }
+        
+        $models = Device::find()->select('model_id')->distinct()->all();
+        
+        $arrayModels = [];
+        for ($i=0;$i<count($models);$i++) {
+            $model = DicModels::find()->where(['id' => $models[$i]->model_id])->one();
+            $dev = Device::find()->where(['model_id' => $models[$i]->model_id])->all();
+            $obj = new \stdClass();
+            if (!empty($model)) {
+                $obj->model = $model->name;
+            } else {
+                $obj->model = 'Нет данных';
+            }
+            $obj->count = count($dev);
+            array_push($arrayModels, $obj);
+        }
+
+        $statuses = Device::find()->select('status')->distinct()->all();
+        
+        $arrayStatus = [];
+        for ($i=0;$i<count($statuses);$i++) {
+            $dev = Device::find()->where(['status' => $statuses[$i]->status])->all();
+            $obj = new \stdClass();
+            $obj->status = (int)$statuses[$i]->status;
+            $obj->count = count($dev);
+            array_push($arrayStatus, $obj);
+        }
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['all'] = count($devices);
+        $data['models'] = $arrayModels;
+        $data['statuses'] = $arrayStatus;
+        return $data;
+    
+    }
 }

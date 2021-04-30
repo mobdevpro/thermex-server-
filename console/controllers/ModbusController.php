@@ -32,10 +32,12 @@ class ModbusController extends \yii\console\Controller
             if ($task != null) {
                 // echo 'addPeriodicTimer count: '.$this->singleton->count();
                 if ($task->time <= time()) {
-                    if ($socketServer->modems[$task->socket->resourceId]->command == null) {
-                        $socketServer->modems[$task->socket->resourceId]->command = $task;
-                        $task->socket->send(hex2bin($task->data));
-                        echo 'send to '.$task->device->name_our.' data: '.$task->data.PHP_EOL;
+                    if (array_key_exists($task->socket->resourceId, $socketServer->modems)) {
+                        if ($socketServer->modems[$task->socket->resourceId]->command == null) {
+                            $socketServer->modems[$task->socket->resourceId]->command = $task;
+                            $task->socket->send(hex2bin($task->data));
+                            echo 'send to '.$task->device->name_our.' data: '.$task->data.PHP_EOL;
+                        }
                     }
                 }
             }

@@ -168,7 +168,9 @@ return [
                     'controller' => 'v1/device',
                     'extraPatterns' => [
                         'GET get-devices' => 'get-devices',
+                        'GET get-dashboard' => 'get-dashboard',
                         'POST save-partner' => 'save-partner',
+                        'POST save' => 'save',
                         'POST add-device-partner' => 'add-device-partner',
                         'GET delete-device' => 'delete-device',
                         'GET delete-device-partner' => 'delete-device-partner',
