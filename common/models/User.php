@@ -22,6 +22,11 @@ use yii\web\IdentityInterface;
  * @property string $verification_token
  * @property string $fio
  * @property string $avatar
+ * @property string $inn
+ * @property string $workphone
+ * @property string $phone
+ * @property string $partner_contact
+ * @property string $staff
  */
 class User extends ActiveRecord implements IdentityInterface
 {

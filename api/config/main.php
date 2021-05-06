@@ -61,6 +61,14 @@ return [
                         'GET login' => 'login',
                         'GET logout' => 'logout',
                         'GET get-profile' => 'get-profile',
+                        'GET get-thermex' => 'get-thermex',
+                        'GET get-thermex-user' => 'get-thermex-user',
+                        'POST save-thermex-user' => 'save-thermex-user',
+                        'GET get-customers' => 'get-customers',
+                        'GET get-partner' => 'get-partner',
+                        'POST save-partner' => 'save-partner',
+                        'GET get-customer' => 'get-customer',
+                        'POST save-customer' => 'save-customer',
                     ]
                 ],
                 [
@@ -168,6 +176,7 @@ return [
                     'controller' => 'v1/device',
                     'extraPatterns' => [
                         'GET get-devices' => 'get-devices',
+                        'GET get-device' => 'get-device',
                         'GET get-dashboard' => 'get-dashboard',
                         'POST save-partner' => 'save-partner',
                         'POST save' => 'save',

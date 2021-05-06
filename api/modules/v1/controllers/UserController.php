@@ -208,4 +208,326 @@ class UserController extends \api\modules\v1\components\ApiController
 
         return $randomString; 
     }
+
+    public function actionGetThermex() {
+        
+        if (!\Yii::$app->user->can('getManagers')) {
+            throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $users = User::find()->all();
+
+        $managers = [];
+        for ($i=0;$i<count($users);$i++) {
+            $userAssigned = Yii::$app->authManager->getAssignments($users[$i]->id);
+            foreach($userAssigned as $userAssign){
+                if (in_array($userAssign->roleName, ['admin', 'engineer', 'manager'])) {
+                    array_push($managers, $users[$i]->getProfile());
+                }
+            }
+        }
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['managers'] = $managers;
+        return $data;
+    }
+
+    public function actionGetThermexUser() {
+        
+        if (!\Yii::$app->user->can('getManagers')) {
+            throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+        $user = User::find()->where(['id' => $id])->one();
+
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        foreach($userAssigned as $userAssign){
+            if (!in_array($userAssign->roleName, ['admin', 'engineer', 'manager'])) {
+                throw new \yii\web\HttpException(401, 'Пользователь не является сотрудником Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+            }
+        }
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['profile'] = $user->getProfile();
+        return $data;
+    }
+
+    public function actionSaveThermexUser() {
+        
+        if (!\Yii::$app->user->can('updateManager')) {
+            throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        }
+
+        // saveThermexUser(id, fio, avatar, staff, workphone, phone, email, role)
+        $params = Yii::$app->request->post();
+        $id = $params['id'];
+        $fio = $params['fio'];
+        $avatar = $params['avatar'];
+        $staff = $params['staff'];
+        $workphone = $params['workphone'];
+        $phone = $params['phone'];
+        $email = $params['email'];
+        $role = $params['role'];
+
+        if ($id == 0) {
+
+            $user = User::find()->where(['username' => $email])->orWhere(['email' => $email])->one();
+            if (!empty($user)) {
+                throw new \yii\web\HttpException(400, 'Пользователь с такой почтой уже существует!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $user = new User();
+            $user->username = $email;
+            $user->email = $email;
+            $user->fio = $fio;
+            $user->staff = $staff;
+            $user->workphone = $workphone;
+            $user->phone = $phone;
+            $password = $this->generatePassword();
+            $password = '1111';
+            $user->password_hash = md5($password);
+            $user->auth_key = md5(time());
+            $user->status = User::STATUS_ACTIVE;
+            $user->created_at = time();
+            $user->updated_at = time();
+
+            if ($user->save()) {
+                if(!empty($avatar)) {
+                    if (!file_exists('uploads/users/')) {
+                        mkdir('uploads/users/', 0777, true);
+                    }
+                    $time = time();
+                    $uploadfile = 'uploads/users/user-'.$user->id;
+                    list($type, $data) = explode(';', $avatar);
+                    list(, $data)      = explode(',', $data);
+                    $data = base64_decode($data);
+                    file_put_contents($uploadfile, $data);
+                    $user->avatar = 'user-'.$user->id;
+                    $user->save();
+                }
+
+                $auth = Yii::$app->authManager;
+                $roleObj = $auth->getRole($role);
+                $auth->assign($roleObj, $user->id);
+
+                $this->sendMail($user->email, "Thermex", "<b>Вы стали сотрудником Термекс Энерджи. Ваш пароль: </b>".$password);
+
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                $data['profile'] = $user->getProfile();
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, sprintf('Неизвестная ошибка! Повторите операцию снова'), User::ERROR_UNKNOWN);
+            }
+        } else {
+            $user = User::find()->where(['id' => $id])->one();
+            if (empty($user)) {
+                throw new \yii\web\HttpException(400, 'Пользователь не является сотрудником Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+            foreach($userAssigned as $userAssign){
+                if (!in_array($userAssign->roleName, ['admin', 'engineer', 'manager'])) {
+                    throw new \yii\web\HttpException(400, 'Пользователь не является сотрудником Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+                }
+            }
+
+            $user2 = User::find()->where(['email' => $email])->andWhere(['<>','id', $id])->one();
+            if (!empty($user2)) {
+                throw new \yii\web\HttpException(400, 'Пользователь с такой почтой уже существует!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $user->email = $email;
+            $user->fio = $fio;
+            $user->staff = $staff;
+            $user->workphone = $workphone;
+            $user->phone = $phone;
+            // $user->updated_at = time();
+
+            if(!empty($avatar)) {
+                if (!file_exists('uploads/users/')) {
+                    mkdir('uploads/users/', 0777, true);
+                }
+                $time = time();
+                $uploadfile = 'uploads/users/user-'.$user->id;
+                list($type, $data) = explode(';', $avatar);
+                list(, $data)      = explode(',', $data);
+                $data = base64_decode($data);
+                file_put_contents($uploadfile, $data);
+                $user->avatar = 'user-'.$user->id;
+            }
+
+            if ($user->save()) {
+
+                $auth = Yii::$app->authManager;
+                $roleObj = $auth->getRole($role);
+                $auth->revokeAll($user->id);
+                $auth->assign($roleObj, $user->id);
+
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                $data['profile'] = $user->getProfile();
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, sprintf('Неизвестная ошибка! Повторите операцию снова'), User::ERROR_UNKNOWN);
+            }
+        }
+    }
+
+    public function actionGetPartner() {
+        
+        if (!\Yii::$app->user->can('getPartners')) {
+            throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+        $user = User::find()->where(['id' => $id])->one();
+
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        foreach($userAssigned as $userAssign){
+            if (!in_array($userAssign->roleName, ['partner'])) {
+                throw new \yii\web\HttpException(401, 'Пользователь не является партнером Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+            }
+        }
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['profile'] = $user->getProfile();
+        return $data;
+    }
+
+    public function actionSavePartner() {
+        
+        if (!\Yii::$app->user->can('updatePartner')) {
+            throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $params = Yii::$app->request->post();
+        $id = $params['id'];
+        $fio = $params['fio'];
+        $avatar = $params['avatar'];
+        $partner_contact = $params['partner_contact'];
+        $inn = $params['inn'];
+        $email = $params['email'];
+        $role = 'partner';
+
+        if ($id == 0) {
+
+            $user = User::find()->where(['username' => $email])->orWhere(['email' => $email])->one();
+            if (!empty($user)) {
+                throw new \yii\web\HttpException(400, 'Пользователь с такой почтой уже существует!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $user = new User();
+            $user->username = $email;
+            $user->email = $email;
+            $user->fio = $fio;
+            $user->partner_contact = $partner_contact;
+            $user->inn = $inn;
+            $password = $this->generatePassword();
+            $password = '1111';
+            $user->password_hash = md5($password);
+            $user->auth_key = md5(time());
+            $user->status = User::STATUS_ACTIVE;
+            $user->created_at = time();
+            $user->updated_at = time();
+
+            if ($user->save()) {
+                if(!empty($avatar)) {
+                    if (!file_exists('uploads/users/')) {
+                        mkdir('uploads/users/', 0777, true);
+                    }
+                    $time = time();
+                    $uploadfile = 'uploads/users/user-'.$user->id;
+                    list($type, $data) = explode(';', $avatar);
+                    list(, $data)      = explode(',', $data);
+                    $data = base64_decode($data);
+                    file_put_contents($uploadfile, $data);
+                    $user->avatar = 'user-'.$user->id;
+                    $user->save();
+                }
+
+                $auth = Yii::$app->authManager;
+                $roleObj = $auth->getRole($role);
+                $auth->assign($roleObj, $user->id);
+
+                $this->sendMail($user->email, "Thermex", "<b>Вы стали партнером Термекс Энерджи. Ваш пароль: </b>".$password);
+
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                $data['profile'] = $user->getProfile();
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, sprintf('Неизвестная ошибка! Повторите операцию снова'), User::ERROR_UNKNOWN);
+            }
+        } else {
+            $user = User::find()->where(['id' => $id])->one();
+            if (empty($user)) {
+                throw new \yii\web\HttpException(400, 'Пользователь не является партнером Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+            foreach($userAssigned as $userAssign){
+                if (!in_array($userAssign->roleName, ['partner'])) {
+                    throw new \yii\web\HttpException(400, 'Пользователь не является партнером Термекс Энерджи!', User::ERROR_ACCESS_DENIED);
+                }
+            }
+
+            $user2 = User::find()->where(['email' => $email])->andWhere(['<>','id', $id])->one();
+            if (!empty($user2)) {
+                throw new \yii\web\HttpException(400, 'Пользователь с такой почтой уже существует!', User::ERROR_ACCESS_DENIED);
+            }
+
+            $user->email = $email;
+            $user->fio = $fio;
+            $user->partner_contact = $partner_contact;
+            $user->inn = $inn;
+            // $user->updated_at = time();
+
+            if(!empty($avatar)) {
+                if (!file_exists('uploads/users/')) {
+                    mkdir('uploads/users/', 0777, true);
+                }
+                $time = time();
+                $uploadfile = 'uploads/users/user-'.$user->id;
+                list($type, $data) = explode(';', $avatar);
+                list(, $data)      = explode(',', $data);
+                $data = base64_decode($data);
+                file_put_contents($uploadfile, $data);
+                $user->avatar = 'user-'.$user->id;
+            }
+
+            if ($user->save()) {
+
+                $data = [];
+                $data['success'] = true;
+                $data['status'] = 200;
+                $data['profile'] = $user->getProfile();
+                return $data;
+            } else {
+                throw new \yii\web\HttpException(400, sprintf('Неизвестная ошибка! Повторите операцию снова'), User::ERROR_UNKNOWN);
+            }
+        }
+    }
+
+    private function sendMail($to, $subject, $message) {
+
+        $header = "From:admin@thermex.ru \r\n";
+        $header .= "MIME-Version: 1.0\r\n";
+        $header .= "Content-type: text/html\r\n";
+
+        $retval = mail($to, $subject, $message, $header);
+        return $retval;
+    }
 }

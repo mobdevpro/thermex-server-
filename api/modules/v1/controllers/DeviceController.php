@@ -104,6 +104,76 @@ class DeviceController extends \api\modules\v1\components\ApiController
         return $data;
     
     }
+
+    public function actionGetDevice() {
+        
+        if (!\Yii::$app->user->can('getDevices')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $user = \Yii::$app->user->identity;
+
+        $params = Yii::$app->request->get();
+        
+        $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        $isAdmin = false;
+        foreach($userAssigned as $userAssign){
+            if ($userAssign->roleName == 'admin') {
+                $isAdmin = true;
+            }
+        }
+
+        if ($isAdmin) {
+            $device = Device::find()->where(['id' => $params['id']])->one();
+        } else {
+            $device = Device::find()->where(['id' => $params['id'], 'partner_id' => $user->id])->one();
+        }
+        
+        if ($device->firmware_id != null) {
+            $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+            if (!empty($fw)) {
+                if (Yii::$app->db->schema->getTableSchema('device_data_'.$device->id) != null) {
+                    DeviceData::setDevice($device);
+                    DeviceData::setConnection(Yii::$app->db);
+                    Yii::$app->db->open();
+                    $dd = DeviceData::find()->one();
+                    Yii::$app->db->close();
+                    // print_r($dd);die;
+                    if (!empty($dd)) {
+                        $firmware = json_decode($fw->firmware);
+                        foreach ($firmware as $key => $value) {
+                            for ($y=0;$y<count($firmware[$key]->data);$y++) {
+                                $address = $firmware[$key]->data[$y]->address;
+                                // echo 'v: '.$dd->{$address};
+                                // if (property_exists($dd, (string)$address)) {
+                                    $firmware[$key]->data[$y]->value = $dd->{$address};
+                                // } else {
+                                    // $firmware[$key]->data[$y]->value = null;
+                                // }
+                                // print_r($firmware[$key]->data[$y]);die;
+                            }
+                        }
+                        $device->data = $firmware;
+                    } else {
+                        $device->data = null;
+                    }
+                } else {
+                    $device->data = null;
+                }
+            } else {
+                $device->data = null;
+            }
+        } else {
+            $device->data = null;
+        }
+        
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['device'] = $device;
+        return $data;
+    
+    }
     
     public function actionSave() {
         
