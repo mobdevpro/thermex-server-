@@ -6,6 +6,7 @@ use yii\filters\auth\QueryParamAuth;
 use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
+use common\models\Device;
 
 /**
  * User Controller

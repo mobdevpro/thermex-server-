@@ -7,6 +7,7 @@ use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
 use common\models\DicEnum;
+use common\models\Firmware;
 
 require_once 'SimpleXLSX.php';
 
@@ -59,39 +60,74 @@ class DicEnumController extends \api\modules\v1\components\ApiController
         $params = Yii::$app->request->post();
         
         $id = $params['id'];
-        $name = $params['name'];
-        $fields = $params['fields'];
 
-        if($id == 0) {
-            $enum = new DicEnum();
-            $enum->name = $name;
-            $enum->fields = json_encode($fields);
-            
-            if($enum->save()) {
-                $data = [];
-                $data['success'] = true;
-                $data['status'] = 200;
-                return $data;
-            } else {
-                throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+        $fw = Firmware::find()->where(['id' => $id])->one();
+
+        if (empty($fw)) {
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_UNKNOWN);
+        }
+
+        if(!empty($_FILES) && !empty($_FILES['file']) && !$_FILES['file']['error']) {
+            if (!file_exists('uploads/firmware/'.$id.'/enum/')) {
+                mkdir('uploads/firmware/'.$id.'/enum/', 0777, true);
             }
-        } else {
-            $enum = DicEnum::find()->where(['id' => $id])->one();
-            if(!empty($enum)) {
-                $enum->name = $name;
-                $enum->fields = json_encode($fields);
+            $output_file = 'uploads/firmware/'.$id.'/enum/'.$_FILES['file']['name'];
+            if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
+                if ( $xlsx = SimpleXLSX::parse($output_file) ) {
 
-                if($enum->save()) {
+                    $de = DicEnum::find()->where(['firmware_id' => $id])->all();
+                    for ($i=0;$i<count($de);$i++) {
+                        $de[$i]->delete();
+                    }
+
+                    $count = 0;
+                    $array = [];
+                    $name = '';
+                    foreach ($xlsx->rows() as $element) {
+                        
+                        if ($count == 0) {
+                            $count++;
+                            continue;
+                        }
+
+                        if (strlen($element[0])) {
+                            if (count($array)) {
+                                $enum = new DicEnum();
+                                $enum->name = $name;
+                                $enum->fields = json_encode($array);
+                                $enum->firmware_id = $id;
+                                $enum->save();
+                                // print_r($array);
+                                $array = [];
+                                $name = $element[0];
+                            } else {
+                                $name = $element[0];
+                            }
+                        } else {
+                            $obj = new \stdClass();
+                            $obj->id = $element[1];
+                            $obj->value = $element[2];
+                            array_push($array, $obj);
+                        }
+                    }
+
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;
                     return $data;
                 } else {
-                    throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+                    // echo SimpleXLSX::parseError();
+                    $data = [];
+                    $data['success'] = false;
+                    $data['status'] = 400;
+                    $data['message'] = 'Файл не удалось распарсить!';
+                    return $data;
                 }
             } else {
-                throw new \yii\web\HttpException(400, 'База не найдена!', User::ERROR_BAD_DATA);
+                throw new \yii\web\HttpException(400, 'Файл не загружен!', User::ERROR_UNKNOWN);
             }
+        } else {
+            throw new \yii\web\HttpException(400, 'Файл не загружен!', User::ERROR_UNKNOWN);
         }
     }
     

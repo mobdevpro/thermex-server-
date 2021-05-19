@@ -5,15 +5,14 @@ use yii;
 use yii\filters\auth\HttpBearerAuth;
 use yii\web\Response;
 use common\models\User;
-use common\models\DicModels;
-use common\models\DicSeria;
+use common\models\Dictionaries;
 
 /**
  * Databases Controller
  */
-class ModelsController extends \api\modules\v1\components\ApiController
+class DictionaryController extends \api\modules\v1\components\ApiController
 {
-    public $modelClass = 'api\modules\v1\models\DicModels';
+    public $modelClass = 'api\modules\v1\models\Dictionaries';
     
     var $unauthorized_actions = [
             
@@ -32,72 +31,44 @@ class ModelsController extends \api\modules\v1\components\ApiController
         Yii::$app->response->format = Response::FORMAT_JSON;
     }
     
-    public function actionGetModels() {
+    public function actionGetDictionaries() {
         
-        if (!\Yii::$app->user->can('getModels')) {
+        if (!\Yii::$app->user->can('getDictionary')) {
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
         
-        $models = DicModels::find()->all();
+        $dictionaries = Dictionaries::find()->all();
         
         $data = [];
         $data['success'] = true;
         $data['status'] = 200;
-        $data['models'] = $models;
+        $data['dictionaries'] = $dictionaries;
         return $data;
     
     }
     
     public function actionSave() {
         
-        if (!\Yii::$app->user->can('updateModel')) {
+        if (!\Yii::$app->user->can('updateDictionary')) {
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
         
         $params = Yii::$app->request->post();
         
         $id = $params['id'];
-        $name = $params['name'];
         
-        $seria = $params['seria'];
-        $seria_id = $params['seria_id'];
-
-        if (array_key_exists('image', $params)) {
-            $image = $params['image'];
-        }
-
-        if(!empty($name)) {
-            if($id == 0) {
-                $model = new DicModels();
-                $model->name = $name;
-                $model->seria = $seria;
-                $model->seria_id = $seria_id;
-
-                if(!empty($_FILES) && !empty($_FILES['file']) && !$_FILES['file']['error']) {
-                    if (!file_exists('uploads/models/docs/')) {
-                        mkdir('uploads/models/docs/', 0777, true);
-                    }
-                    $output_file = 'uploads/models/docs/'.$_FILES['file']['name'];
-                    if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
-                        $model->file = $_FILES['file']['name'];
-                    }
+        if($id == 0) {
+            $dict = new Dictionaries();
+            
+            if(!empty($_FILES) && !empty($_FILES['file']) && !$_FILES['file']['error']) {
+                if (!file_exists('uploads/docs/')) {
+                    mkdir('uploads/docs/', 0777, true);
                 }
-                
-                if($model->save()) {
-
-                    if(!empty($image)) {
-                        if (!file_exists('uploads/models/')) {
-                            mkdir('uploads/models/', 0777, true);
-                        }
-                        $time = time();
-                        $uploadfile = 'uploads/models/model-'.$model->id;
-                        list($type, $data) = explode(';', $image);
-                        list(, $data)      = explode(',', $data);
-                        $data = base64_decode($data);
-                        file_put_contents($uploadfile, $data);
-                        $model->image = 'model-'.$model->id;
-                        $model->save();
-                    }
+                $output_file = 'uploads/docs/'.$_FILES['file']['name'];
+                if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
+                    $dict->file = $_FILES['file']['name'];
+                }
+                if($dict->save()) {
 
                     $data = [];
                     $data['success'] = true;
@@ -107,56 +78,40 @@ class ModelsController extends \api\modules\v1\components\ApiController
                     throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
                 }
             } else {
-                $model = DicModels::find()->where(['id' => $id])->one();
-                if(!empty($model)) {
-                    $model->name = $name;
-                    $model->seria = $seria;
-                    $model->seria_id = $seria_id;
-
-                    if(!empty($image)) {
-                        if (!file_exists('uploads/models/')) {
-                            mkdir('uploads/models/', 0777, true);
-                        }
-                        $time = time();
-                        $uploadfile = 'uploads/models/model-'.$model->id;
-                        list($type, $data) = explode(';', $image);
-                        list(, $data)      = explode(',', $data);
-                        $data = base64_decode($data);
-                        file_put_contents($uploadfile, $data);
-                        $model->image = 'model-'.$model->id;
+                throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
+            }
+        } else {
+            $dict = Dictionaries::find()->where(['id' => $id])->one();
+            if(!empty($dict)) {
+                if(!empty($_FILES) && !empty($_FILES['file']) && !$_FILES['file']['error']) {
+                    if (!file_exists('uploads/docs/')) {
+                        mkdir('uploads/docs/', 0777, true);
                     }
-
-                    if(!empty($_FILES) && !empty($_FILES['file']) && !$_FILES['file']['error']) {
-                        if (!file_exists('uploads/models/docs/')) {
-                            mkdir('uploads/models/docs/', 0777, true);
-                        }
-                        $output_file = 'uploads/models/docs/'.$_FILES['file']['name'];
-                        if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
-                            $model->file = $_FILES['file']['name'];
-                        }
+                    $output_file = 'uploads/docs/'.$_FILES['file']['name'];
+                    if (move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
+                        $dict->file = $_FILES['file']['name'];
                     }
-
-                    if($model->save()) {
+                    if($dict->save()) {
+    
                         $data = [];
                         $data['success'] = true;
                         $data['status'] = 200;
-                        // $data['file'] = $_FILES;
                         return $data;
                     } else {
                         throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
                     }
                 } else {
-                    throw new \yii\web\HttpException(400, 'База не найдена!', User::ERROR_BAD_DATA);
+                    throw new \yii\web\HttpException(400, 'Неизвестная ошибка! Повторите операцию снова.', User::ERROR_UNKNOWN);
                 }
+            } else {
+                throw new \yii\web\HttpException(400, 'Документ не найден!', User::ERROR_BAD_DATA);
             }
-        } else {
-            throw new \yii\web\HttpException(400, 'Заполните все поля!', User::ERROR_BAD_DATA);
         }
     }
     
-    public function actionDeleteModel() {
+    public function actionDeleteDictionary() {
         
-        if (!\Yii::$app->user->can('deleteModel')) {
+        if (!\Yii::$app->user->can('deleteDictionary')) {
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
         
@@ -164,9 +119,9 @@ class ModelsController extends \api\modules\v1\components\ApiController
         
         if(!empty($params['id'])) {
             $id = $params['id'];
-            $model = DicModels::find()->where(['id' => $id])->one();
-            if(!empty($model)) {
-                if($model->delete()) {
+            $dict = Dictionaries::find()->where(['id' => $id])->one();
+            if(!empty($dict)) {
+                if($dict->delete()) {
                     $data = [];
                     $data['success'] = true;
                     $data['status'] = 200;

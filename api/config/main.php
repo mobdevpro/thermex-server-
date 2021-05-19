@@ -153,6 +153,7 @@ return [
                     'controller' => 'v1/partner',
                     'extraPatterns' => [
                         'GET get-partners' => 'get-partners',
+                        'GET get-partner-devices' => 'get-partner-devices',
                         'POST save' => 'save',
                         'GET delete-partner' => 'delete-partner',
                         'GET set-partner-status' => 'set-partner-status',
@@ -168,6 +169,19 @@ return [
                         'GET get-models' => 'get-models',
                         'POST save' => 'save',
                         'GET delete-model' => 'delete-model',
+                        'GET get-serias' => 'get-serias',
+                        'POST save-seria' => 'save-seria',
+                        'GET delete-seria' => 'delete-seria',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => 'v1/dictionary',
+                    'extraPatterns' => [
+                        'GET get-dictionaries' => 'get-dictionaries',
+                        'POST save' => 'save',
+                        'GET delete-dictionary' => 'delete-dictionary',
                     ]
                 ],
                 [

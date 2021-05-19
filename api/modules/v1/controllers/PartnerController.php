@@ -60,6 +60,8 @@ class PartnerController extends \api\modules\v1\components\ApiController
             if (!empty($user)) {
                 $obj = new \stdClass;
                 $obj->profile = $user->getPublicProfile();
+                $obj->worked = count(Device::find()->where(['partner_id' => $user->id, 'status' => 5])->all());
+                $obj->notworked = count(Device::find()->where(['partner_id' => $user->id])->andWhere(['!=', 'status', 5])->all());
                 $obj->devices = Device::find()->where(['partner_id' => $users[$i]['user_id']])->all();
                 array_push($partners, $obj);
             }
@@ -292,5 +294,35 @@ class PartnerController extends \api\modules\v1\components\ApiController
 
         $retval = mail($to, $subject, $message, $header);
         return $retval;
+    }
+
+    public function actionGetPartnerDevices() {
+        
+        // if (!\Yii::$app->user->can('updateManager')) {
+        //     throw new \yii\web\HttpException(401, 'У вас нет прав!', User::ERROR_ACCESS_DENIED);
+        // }
+
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+        $worked = $params['worked'];
+
+        $partner = User::find()->where(['id' => $id])->one();
+
+        if (empty($partner)) {
+            throw new \yii\web\HttpException(400, 'Пользователь не найден!', User::ERROR_BAD_DATA);
+        }
+
+        if ($worked == 1) {
+            $devices = Device::find()->where(['partner_id' => $id, 'status' => 5])->all();
+        } else {
+            $devices = Device::find()->where(['partner_id' => $id])->andWhere(['!=', 'status', 5])->all();
+        }
+
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['worked'] = $worked;
+        $data['devices'] = $devices;
+        return $data;
     }
 }

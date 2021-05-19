@@ -16,6 +16,8 @@ class m210320_072955_create_table_dic_models extends Migration
             'id' => $this->primaryKey(),
             'name' => $this->string()->notNull()->unique(),
             'image' => $this->string(),
+            'seria' => $this->string(),
+            'seria_id' => $this->integer(),
         ]);
     }
 

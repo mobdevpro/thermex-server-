@@ -149,22 +149,34 @@ class RbacStartController extends Controller
         // $deleteFirmware->description = 'Удаление прошивки';
         // $auth->add($deleteFirmware);
 
-        $getEnums = $auth->createPermission('getEnums');
-        $getEnums->description = 'Получение списка перечисляемых типов';
-        $auth->add($getEnums);
+        // $getEnums = $auth->createPermission('getEnums');
+        // $getEnums->description = 'Получение списка перечисляемых типов';
+        // $auth->add($getEnums);
 
-        $updateEnum = $auth->createPermission('updateEnum');
-        $updateEnum->description = 'Создание/редактирование перечисляемого типа';
-        $auth->add($updateEnum);
+        // $updateEnum = $auth->createPermission('updateEnum');
+        // $updateEnum->description = 'Создание/редактирование перечисляемого типа';
+        // $auth->add($updateEnum);
 
-        $deleteEnum = $auth->createPermission('deleteEnum');
-        $deleteEnum->description = 'Удаление перечисляемого типа';
-        $auth->add($deleteEnum);
+        // $deleteEnum = $auth->createPermission('deleteEnum');
+        // $deleteEnum->description = 'Удаление перечисляемого типа';
+        // $auth->add($deleteEnum);
+
+        $getDictionary = $auth->createPermission('getDictionary');
+        $getDictionary->description = 'Получение списка справочников';
+        $auth->add($getDictionary);
+
+        $updateDictionary = $auth->createPermission('updateDictionary');
+        $updateDictionary->description = 'Создание/редактирование справочников';
+        $auth->add($updateDictionary);
+
+        $deleteDictionary = $auth->createPermission('deleteDictionary');
+        $deleteDictionary->description = 'Удаление справочника';
+        $auth->add($deleteDictionary);
 
 
 
-       $auth->addChild($admin, $getEnums);
-       $auth->addChild($admin, $updateEnum);
-       $auth->addChild($admin, $deleteEnum);
+       $auth->addChild($admin, $getDictionary);
+       $auth->addChild($admin, $updateDictionary);
+       $auth->addChild($admin, $deleteDictionary);
    }
 }

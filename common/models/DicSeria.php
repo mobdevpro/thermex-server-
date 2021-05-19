@@ -5,22 +5,19 @@ namespace common\models;
 use Yii;
 
 /**
- * This is the model class for table "dic_models".
+ * This is the model class for table "dic_seria".
  *
  * @property integer    $id
  * @property string     $name
- * @property string     $image
- * @property integer    $seria_id
- * @property string     $seria
  */
-class DicModels extends \yii\db\ActiveRecord
+class DicSeria extends \yii\db\ActiveRecord
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return 'dic_models';
+        return 'dic_seria';
     }
 
     /**

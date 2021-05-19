@@ -10,6 +10,7 @@ use Yii;
  * @property integer    $id
  * @property string     $name
  * @property string     $fields
+ * @property integer    $firmware_id
  */
 class DicEnum extends \yii\db\ActiveRecord
 {
