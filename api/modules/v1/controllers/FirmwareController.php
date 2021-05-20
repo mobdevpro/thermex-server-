@@ -118,17 +118,16 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         }
 
         if(!empty($_FILES) && !$_FILES['file']['error']) {
-            if (!file_exists('uploads/firmware/')) {
-                mkdir('uploads/firmware/', 0777, true);
+            if (!file_exists('uploads/firmware/'.$id.'/')) {
+                mkdir('uploads/firmware/'.$id.'/', 0777, true);
             }
 
-            $filename = 'firmware-'.date('Y-m-d H:i:s', time());
-            $output_file = 'uploads/firmware/'.$filename;
+            $output_file = 'uploads/firmware/'.$id.'/'.$_FILES['file']['name'];
             if (!move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
                 $data = [];
                 $data['success'] = false;
                 $data['status'] = 400;
-                $data['message'] = 'Файл не удалось распарсить!';
+                $data['message'] = 'Файл не удалось загрузить!';
                 return $data;
             }
 
@@ -202,7 +201,7 @@ class FirmwareController extends \api\modules\v1\components\ApiController
             $data = [];
             $data['success'] = false;
             $data['status'] = 400;
-            $data['message'] = 'Файл не удалось распарсить!';
+            $data['message'] = 'Файл не удалось загрузить!';
             return $data;
         }
     }
@@ -222,17 +221,16 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         }
 
         if(!empty($_FILES) && !$_FILES['file']['error']) {
-            if (!file_exists('uploads/alarm/')) {
-                mkdir('uploads/alarm/', 0777, true);
+            if (!file_exists('uploads/firmware/'.$id.'/alarm/')) {
+                mkdir('uploads/firmware/'.$id.'/alarm/', 0777, true);
             }
 
-            $filename = 'alarm-'.date('Y-m-d H:i:s', time());
-            $output_file = 'uploads/alarm/'.$filename;
+            $output_file = 'uploads/firmware/'.$id.'/alarm/'.$_FILES['file']['name'];
             if (!move_uploaded_file($_FILES['file']['tmp_name'], $output_file)) {
                 $data = [];
                 $data['success'] = false;
                 $data['status'] = 400;
-                $data['message'] = 'Файл не удалось распарсить!';
+                $data['message'] = 'Файл не удалось сохранить!';
                 return $data;
             }
 
@@ -284,7 +282,7 @@ class FirmwareController extends \api\modules\v1\components\ApiController
             $data = [];
             $data['success'] = false;
             $data['status'] = 400;
-            $data['message'] = 'Файл не удалось распарсить!';
+            $data['message'] = 'Файл не удалось загрузить!';
             return $data;
         }
     }

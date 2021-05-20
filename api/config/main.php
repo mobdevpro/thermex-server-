@@ -150,6 +150,16 @@ return [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'pluralize' => false,
+                    'controller' => 'v1/dic-sensor',
+                    'extraPatterns' => [
+                        'GET get-sensors' => 'get-sensors',
+                        'POST save' => 'save',
+                        'GET delete-sensor' => 'delete-sensor',
+                    ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
                     'controller' => 'v1/partner',
                     'extraPatterns' => [
                         'GET get-partners' => 'get-partners',
@@ -191,6 +201,7 @@ return [
                     'extraPatterns' => [
                         'GET get-devices' => 'get-devices',
                         'GET get-device' => 'get-device',
+                        'GET get-device-sensor' => 'get-device-sensor',
                         'GET get-dashboard' => 'get-dashboard',
                         'POST save-partner' => 'save-partner',
                         'POST save' => 'save',

@@ -41,7 +41,10 @@ class DicEnumController extends \api\modules\v1\components\ApiController
             throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
         }
         
-        $enums = DicEnum::find()->all();
+        $params = Yii::$app->request->get();
+        $id = $params['id'];
+
+        $enums = DicEnum::find()->where(['firmware_id' => $id])->all();
         
         $data = [];
         $data['success'] = true;

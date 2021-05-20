@@ -9,6 +9,7 @@ use common\models\DicModels;
 use common\models\Device;
 use common\models\Firmware;
 use common\models\DeviceData;
+use common\models\DicSensor;
 
 /**
  * Device Controller
@@ -173,6 +174,84 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $data['device'] = $device;
         return $data;
     
+    }
+
+    public function actionGetDeviceSensor() {
+        
+        if (!\Yii::$app->user->can('getDevices')) {
+            throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        }
+
+        $user = \Yii::$app->user->identity;
+
+        $params = Yii::$app->request->get();
+        
+        // $userAssigned = Yii::$app->authManager->getAssignments($user->id);
+        // $isAdmin = false;
+        // foreach($userAssigned as $userAssign){
+        //     if ($userAssign->roleName == 'admin') {
+        //         $isAdmin = true;
+        //     }
+        // }
+
+        // if ($isAdmin) {
+        //     $device = Device::find()->where(['id' => $params['id']])->one();
+        // } else {
+        //     $device = Device::find()->where(['id' => $params['id'], 'partner_id' => $user->id])->one();
+        // }
+
+        $device_id = $params['id'];
+
+        $device = Device::find()->where(['id' => $device_id])->one();
+
+        if (empty($device)) {
+            throw new \yii\web\HttpException(400, 'Устройство не найдено!', User::ERROR_UNKNOWN);
+        }
+
+        $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+        
+        if (empty($fw)) {
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_UNKNOWN);
+        }
+
+        if ($fw->fields == null) { 
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_UNKNOWN);
+        }
+
+        $fields = json_decode($fw->fields);
+
+        if ($fields == null) { 
+            throw new \yii\web\HttpException(400, 'Прошивка не найдена!', User::ERROR_UNKNOWN);
+        }
+
+        $ds = DicSensor::find()->all();
+
+        $array = [];
+
+        if (Yii::$app->db->schema->getTableSchema('device_data_'.$device->id) != null) {
+            DeviceData::setDevice($device);
+            DeviceData::setConnection(Yii::$app->db);
+            Yii::$app->db->open();
+            $dd = DeviceData::find()->one();
+            Yii::$app->db->close();
+            if (!empty($dd)) {
+                for ($i=0;$i<count($ds);$i++) {
+                    // print_r($fields->{$ds[$i]->address});
+                    $obj = new \stdClass();
+                    $obj->address = $ds[$i]->address;
+                    $obj->label = $fields->{$ds[$i]->address}->label;
+                    $obj->description = $fields->{$ds[$i]->address}->description;
+                    $obj->value = $dd->{$ds[$i]->address};
+                    array_push($array, $obj);
+                }
+            }
+        }
+
+        $data = [];
+        $data['success'] = true;
+        $data['status'] = 200;
+        $data['sensors'] = $array;
+        return $data;
     }
     
     public function actionSave() {
