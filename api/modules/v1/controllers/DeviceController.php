@@ -59,6 +59,12 @@ class DeviceController extends \api\modules\v1\components\ApiController
         
 
         for ($i=0;$i<count($devices);$i++) {
+            date_default_timezone_set('UTC');
+            if (time() - strtotime($devices[$i]->last_active) <= 60) {
+                $devices[$i]->is_online = 1;
+            } else {
+                $devices[$i]->is_online = 0;
+            }
             if ($devices[$i]->firmware_id != null) {
                 $fw = Firmware::find()->where(['id' => $devices[$i]->firmware_id])->one();
                 if (!empty($fw)) {

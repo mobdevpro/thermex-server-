@@ -1,23 +1,16 @@
 <?php
 namespace console\components; 
 
-// ini_set('memory_limit', '956M');
-
 use yii;
 use common\models\User;
 use common\models\Device;
 
-class Singleton extends \SplPriorityQueue
+class SingletonQueue
 {
     private static $instances = [];
 
     protected function __construct() {
-        $cls = static::class;
-        if (!isset(self::$instances[$cls])) {
-            self::$instances[$cls] = new static();
-        }
-
-        return self::$instances[$cls];
+        
     }
 
     protected function __clone() {
@@ -25,10 +18,10 @@ class Singleton extends \SplPriorityQueue
     }
 
     public function __wakeup() {
-        throw new \Exception("Cannot unserialize a singleton.");
+        throw new \Exception("Cannot unserialize a SingletonQueue.");
     }
 
-    public static function getInstance(): Singleton {
+    public static function getInstance(): SingletonQueue {
         $cls = static::class;
         if (!isset(self::$instances[$cls])) {
             self::$instances[$cls] = new static();

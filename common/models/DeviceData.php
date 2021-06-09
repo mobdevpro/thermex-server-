@@ -23,19 +23,6 @@ class DeviceData extends \yii\db\ActiveRecord
 
 	public function __construct(){
 
-        // $this->table_name = 'device_data_'.$device->id;
-        // self::$static_table_name = $this->table_name;
-
-        // if ($device->db_id != null) {
-        //     $database = Databases::find()->where(['id' => $device->db_id])->one();
-        //     $this->host = $database->address;
-        //     $this->dbname = $database->db_name;
-        //     $this->username = $database->db_login;
-        //     $this->password = $database->db_password;
-        //     $this->firmware_id = $device->firmware_id;
-        // } else {
-        //     return -1;
-        // }
 	}
 
     public static function setDevice($device) {

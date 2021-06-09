@@ -13,6 +13,8 @@ use Yii;
  * @property string     $firmware
  * @property string     $fields_a
  * @property string     $alarm
+ * @property integer    $author_id
+ * @property string     $date
  */
 class Firmware extends \yii\db\ActiveRecord
 {
@@ -38,7 +40,7 @@ class Firmware extends \yii\db\ActiveRecord
     function attributes()
     {
         $attributes = parent::attributes();
-        // $attributes[] = 'monitors';
+        $attributes[] = 'author';
         return $attributes;
     }
 }

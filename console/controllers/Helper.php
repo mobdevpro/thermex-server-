@@ -200,6 +200,7 @@ class Helper
                     $dd = new DeviceData();
                     $dd->transaction_id = $transaction_id;
                     $dd->time = date('Y-m-d H:i:s', time());
+                    echo 'DeviceData empty'.PHP_EOL;
                 }
                 // print_r($fields);
                 foreach ($obj as $key => $value) {
@@ -213,6 +214,8 @@ class Helper
                     }
                 }
 
+                $dd->save();
+                $conn->close();
                 DeviceData::setConnection(Yii::$app->db);
                 Yii::$app->db->open();
                 $dd = DeviceData::find()->one();

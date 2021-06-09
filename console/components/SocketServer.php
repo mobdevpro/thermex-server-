@@ -8,17 +8,31 @@ use Ratchet\RFC6455\Messaging\FrameInterface;
 use common\models\User;
 use common\models\Device;
 use console\components\Singleton;
+use console\components\SingletonQueue;
+use console\components\SingletonUser;
 use console\controllers\Helper;
 
 class SocketServer implements MessageComponentInterface
 {
     public $modems;
     var $singleton;
+    var $singletonQueue;
+    var $singletonUser;
+    var $key;
 
-    public function __construct()
+    public function __construct($key)
     {
-        $this->singleton = Singleton::getInstance();
-        $this->modems = [];
+        $this->singleton = Yii::$container->get('Singleton');//Singleton::getInstance();
+        $this->singletonQueue = Yii::$container->get('SingletonQueue');//SingletonQueue::getInstance();
+        $this->singletonUser = Yii::$container->get('SingletonUser');//SingletonUser::getInstance();
+        $this->singletonQueue->dev = new \stdClass();
+        $this->singletonQueue->dev->dev = [];
+        $this->singletonQueue->dev->socket = [];
+        
+        $this->singletonQueue->user = new \stdClass();
+        $this->singletonQueue->user->user = [];
+        $this->singletonQueue->user->socket = [];
+        $this->key = $key;
         // $this->enableKeepAlive = false;
     }
 
@@ -26,33 +40,40 @@ class SocketServer implements MessageComponentInterface
     {
         echo "New connection! ({$conn->resourceId})\n";
 
-        $this->modems[$conn->resourceId] = new \stdClass();
-        $this->modems[$conn->resourceId]->socket = $conn;
-        $this->modems[$conn->resourceId]->device = null;
-        $this->modems[$conn->resourceId]->command = null;
+        $this->singletonQueue->dev->socket[$conn->resourceId] = new \stdClass();
+        $this->singletonQueue->dev->socket[$conn->resourceId]->socket = $conn;
+        $this->singletonQueue->dev->socket[$conn->resourceId]->device = null;
+        $this->singletonQueue->dev->socket[$conn->resourceId]->command = null;
     }
 
     public function onMessage(ConnectionInterface $from, $msg)
     {
-        if ($this->modems[$from->resourceId]->device == null) {
-            echo 'connect : '.$msg.PHP_EOL;
+        echo 'len: '.strlen($msg).PHP_EOL;
+        if (strlen($msg) === 0) {
+            $from->send('');
+            return;
+        }
+
+        if ($this->singletonQueue->dev->socket[$from->resourceId]->device == null) {
+            echo 'received: '.$msg.PHP_EOL;
             Yii::$app->db->open();
             $device = Device::find()->where(['imei' => $msg])->one();
             if (!empty($device)) {
                 date_default_timezone_set('UTC');
-                $device->connection_time = date('Y-m-d H:i:s', time());
+                if ($this->key != 1) {
+                    $device->connection_time = date('Y-m-d H:i:s', time());
+                }
+                
                 $device->is_online = 1;
                 $device->save();
-                $this->modems[$from->resourceId]->device = $device;
-                echo 'Законнектился : '.$this->modems[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
+                $this->singletonQueue->dev->dev[$device->id] = $from;
+                $this->singletonQueue->dev->socket[$from->resourceId]->device = $device;
+                echo 'Законнектился : '.$this->singletonQueue->dev->socket[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
                 
                 $address = Helper::getAddresses($device);
 
                 if ($address == null) {
                     echo 'not found address';
-                    // if (array_key_exists($from->resourceId, $this->modems)) {
-                    //     unset($this->modems[$from->resourceId]);
-                    // }
                     $from->close();
                     Yii::$app->db->close();
                     return;
@@ -60,7 +81,11 @@ class SocketServer implements MessageComponentInterface
 
                 $transaction_id = time();
                 for ($i=0;$i<count($address->{'3000'});$i++) {
-                    $priority = -(time() + 15);
+                    if ($this->key == 1) {
+                        $priority = -(time() + 15);
+                    } else {
+                        $priority = -(time() + 120);
+                    }
                     $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
@@ -77,7 +102,11 @@ class SocketServer implements MessageComponentInterface
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {
-                    $priority = -(time() + 15);
+                    if ($this->key == 1) {
+                        $priority = -(time() + 15);
+                    } else {
+                        $priority = -(time() + 120);
+                    }
                     $data = Helper::BuildReadRequest($device->address, $address->{'8000'}[$i]->start, $address->{'8000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
@@ -92,41 +121,37 @@ class SocketServer implements MessageComponentInterface
                     $obj->count = 1;
                     $this->singleton->insert($obj, $priority);
                 }
-
+                echo 'on connect count: '.$this->singleton->count().PHP_EOL;
             } else {
                 echo 'not found device'.PHP_EOL;
-                // if (array_key_exists($from->resourceId, $this->modems)) {
-                //     unset($this->modems[$from->resourceId]);
-                // }
                 $from->close();
             }
             Yii::$app->db->close();
         } else {
             date_default_timezone_set('UTC');
             Yii::$app->db->open();
-            $device = Device::find()->where(['id' => $this->modems[$from->resourceId]->device->id])->one();
+            $device = Device::find()->where(['id' => $this->singletonQueue->dev->socket[$from->resourceId]->device->id])->one();
             if (!empty($device)) {
                 $device->last_active = date('Y-m-d H:i:s', time());
                 $device->is_online = 1;
                 $device->save();
-                $this->modems[$from->resourceId]->device = $device;
+                $this->singletonQueue->dev->socket[$from->resourceId]->device = $device;
             } else {
-                // unset($this->modems[$from->resourceId]);
                 $from->close();
             }
             Yii::$app->db->close();
-            echo 'device: '.$this->modems[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
-            $obj = $this->modems[$from->resourceId]->command;
+            echo 'device: '.$this->singletonQueue->dev->socket[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
+            $obj = $this->singletonQueue->dev->socket[$from->resourceId]->command;
 
             $this->singleton->extract();
 
-            Helper::getAnswer($this->modems[$from->resourceId]->command, $msg);
+            Helper::getAnswer($this->singletonQueue->dev->socket[$from->resourceId]->command, $msg);
 
             if ($obj->command == 'read') {
                 $time = time() + 15;
                 $obj->time = $time;
                 $obj->count = $obj->count + 1;
-                $this->modems[$from->resourceId]->command = null;
+                $this->singletonQueue->dev->socket[$from->resourceId]->command = null;
                 $this->singleton->insert($obj, -$time);
             }
         }
@@ -134,23 +159,30 @@ class SocketServer implements MessageComponentInterface
 
     public function onClose(ConnectionInterface $conn)
     {
-        Yii::$app->db->open();
-        
-        $device = Device::find()->where(['id' => $this->modems[$conn->resourceId]->device->id])->one();
-        $device->disconnection_time = date('Y-m-d H:i:s', time());
-        $device->is_online = 0;
-        $device->save();
-
-        Yii::$app->db->close();
-
-        unset($this->modems[$conn->resourceId]);
+        if ($this->singletonQueue->dev->socket[$conn->resourceId]->device != null) {
+            Yii::$app->db->open();
+            $device = Device::find()->where(['id' => $this->singletonQueue->dev->socket[$conn->resourceId]->device->id])->one();
+            $device->disconnection_time = date('Y-m-d H:i:s', time());
+            $device->is_online = 0;
+            $device->save();
+            Yii::$app->db->close();
+        }
+        $device = $this->singletonQueue->dev->socket[$conn->resourceId]->device;
+        if ($device != null && array_key_exists($device->id, $this->singletonQueue->dev->dev)) {
+            unset($this->singletonQueue->dev->dev[$device->id]);
+        }
+        unset($this->singletonQueue->dev->socket[$conn->resourceId]);
         echo "Connection {$conn->resourceId} has disconnected\n";
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e)
     {
         echo "An error has occurred: {$e->getMessage()}\n";
-        unset($this->modems[$conn->resourceId]);
+        $device = $this->singletonQueue->dev->socket[$conn->resourceId]->device;
+        if ($device != null && array_key_exists($device->id, $this->singletonQueue->dev->dev)) {
+            unset($this->singletonQueue->dev->dev[$device->id]);
+        }
+        unset($this->singletonQueue->dev->socket[$conn->resourceId]);
         $conn->close();
     }
 }

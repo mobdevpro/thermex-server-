@@ -75,6 +75,15 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         }
         
         $firmwares = Firmware::find()->all();
+
+        for ($i=0;$i<count($firmwares);$i++) {
+            if ($firmwares[$i]->author_id != null) {
+                $auth = User::find()->where(['id' => $firmwares[$i]->author_id])->one();
+                if (!empty($auth)) {
+                    $firmwares[$i]->author = $auth->fio;
+                }
+            }
+        }
         
         $data = [];
         $data['success'] = true;
@@ -299,10 +308,14 @@ class FirmwareController extends \api\modules\v1\components\ApiController
         $name = $params['name'];
         $firmware = $params['firmware'];
 
+        $user = \Yii::$app->user->identity;
+
         if($id == 0) {
             $fw = new Firmware();
             $fw->name = $name;
             $fw->firmware = json_encode($firmware);
+            $fw->author_id = $user->id;
+            $fw->date = date('Y-m-d', time());
             
             if($fw->save()) {
                 $data = [];
