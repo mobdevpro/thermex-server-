@@ -21,12 +21,12 @@ class ChatServer implements MessageComponentInterface
     
     public function __construct()
     {
-        // $this->singleton = Singleton::getInstance();
-        // $this->singletonQueue = SingletonQueue::getInstance();
-        // $this->singletonUser = SingletonUser::getInstance();
-        $this->singleton = Yii::$container->get('Singleton');//Singleton::getInstance();
-        $this->singletonQueue = Yii::$container->get('SingletonQueue');//SingletonQueue::getInstance();
-        $this->singletonUser = Yii::$container->get('SingletonUser');//SingletonUser::getInstance();
+        $this->singleton = Singleton::getInstance();
+        $this->singletonQueue = SingletonQueue::getInstance();
+        $this->singletonUser = SingletonUser::getInstance();
+        // $this->singleton = Yii::$container->get('Singleton');//Singleton::getInstance();
+        // $this->singletonQueue = Yii::$container->get('SingletonQueue');//SingletonQueue::getInstance();
+        // $this->singletonUser = Yii::$container->get('SingletonUser');//SingletonUser::getInstance();
 
         $this->singletonQueue->user = new \stdClass();
         $this->singletonQueue->user->user = [];

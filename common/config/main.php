@@ -5,14 +5,14 @@ return [
         '@npm'   => '@vendor/npm-asset',
     ],
     'vendorPath' => dirname(dirname(__DIR__)) . '/vendor',
-    'container' => [
-        'singletons' => [
-            'Singleton' => ['class' => 'console\components\Singleton'],
-            'SingletonUser' => ['class' => 'console\components\SingletonUser'],
-            'SingletonQueue' => ['class' => 'console\components\SingletonQueue'],
-        ],
+    'bootstrap' => [
+        'queue', // The component registers its own console commands
     ],
     'components' => [
+        'queue' => [
+            'class' => 'yii\queue\redis\Queue',
+            'as log' => 'yii\queue\LogBehavior',
+        ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],

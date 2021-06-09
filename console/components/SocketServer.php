@@ -10,6 +10,7 @@ use common\models\Device;
 use console\components\Singleton;
 use console\components\SingletonQueue;
 use console\components\SingletonUser;
+use console\components\SenderJob;
 use console\controllers\Helper;
 
 class SocketServer implements MessageComponentInterface
@@ -22,9 +23,9 @@ class SocketServer implements MessageComponentInterface
 
     public function __construct($key)
     {
-        $this->singleton = Yii::$container->get('Singleton');//Singleton::getInstance();
-        $this->singletonQueue = Yii::$container->get('SingletonQueue');//SingletonQueue::getInstance();
-        $this->singletonUser = Yii::$container->get('SingletonUser');//SingletonUser::getInstance();
+        $this->singleton = Singleton::getInstance();
+        $this->singletonQueue = SingletonQueue::getInstance();
+        $this->singletonUser = SingletonUser::getInstance();
         $this->singletonQueue->dev = new \stdClass();
         $this->singletonQueue->dev->dev = [];
         $this->singletonQueue->dev->socket = [];
@@ -63,7 +64,7 @@ class SocketServer implements MessageComponentInterface
                 if ($this->key != 1) {
                     $device->connection_time = date('Y-m-d H:i:s', time());
                 }
-                
+
                 $device->is_online = 1;
                 $device->save();
                 $this->singletonQueue->dev->dev[$device->id] = $from;
@@ -89,7 +90,7 @@ class SocketServer implements MessageComponentInterface
                     $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
-                    $obj->socket = $from;
+                    // $obj->socket = $from;
                     $obj->data = $data;
                     $obj->start = $address->{'3000'}[$i]->start;
                     $obj->length = $address->{'3000'}[$i]->length;
@@ -98,7 +99,10 @@ class SocketServer implements MessageComponentInterface
                     $obj->command = 'read';
                     $obj->transaction_id = $transaction_id;
                     $obj->count = 1;
-                    $this->singleton->insert($obj, $priority);
+                    // $this->singleton->insert($obj, $priority);
+                    $id = Yii::$app->queue->push(new SenderJob([
+                        'obj' => $obj,
+                    ]));
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {
