@@ -58,7 +58,14 @@ class SocketServer implements MessageComponentInterface
         if ($this->singletonQueue->dev->socket[$from->resourceId]->device == null) {
             echo 'received: '.$msg.PHP_EOL;
             Yii::$app->db->open();
-            $device = Device::find()->where(['imei' => $msg])->one();
+            if (strpos($msg, 'IMEI=')) {
+                $ar = explode('IMEI=', $msg);
+                $ar = explode(',', $ar[1]);
+                $imei = $ar[0];
+            } else {
+                $imei = $msg;
+            }
+            $device = Device::find()->where(['imei' => $imei])->one();
             if (!empty($device)) {
                 date_default_timezone_set('UTC');
                 if ($this->key != 1) {
@@ -90,7 +97,7 @@ class SocketServer implements MessageComponentInterface
                     $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
-                    // $obj->socket = $from;
+                    $obj->socket = $from;
                     $obj->data = $data;
                     $obj->start = $address->{'3000'}[$i]->start;
                     $obj->length = $address->{'3000'}[$i]->length;
@@ -99,10 +106,10 @@ class SocketServer implements MessageComponentInterface
                     $obj->command = 'read';
                     $obj->transaction_id = $transaction_id;
                     $obj->count = 1;
-                    // $this->singleton->insert($obj, $priority);
-                    $id = Yii::$app->queue->push(new SenderJob([
-                        'obj' => $obj,
-                    ]));
+                    $this->singleton->insert($obj, $priority);
+                    // $id = Yii::$app->queue->push(new SenderJob([
+                    //     'obj' => $obj,
+                    // ]));
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {

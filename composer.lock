@@ -4,8 +4,67 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1428ffa7f7f591e3b65d4aee09dfec21",
+    "content-hash": "d50b2013e53e7158f5545b7e4a741dee",
     "packages": [
+        {
+            "name": "bazilio/yii2-async",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bazilio91/yii2-async.git",
+                "reference": "7a97629a6dc383667a85fc3479fa417897632309"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bazilio91/yii2-async/zipball/7a97629a6dc383667a85fc3479fa417897632309",
+                "reference": "7a97629a6dc383667a85fc3479fa417897632309",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4.0",
+                "yiisoft/yii2": "*"
+            },
+            "require-dev": {
+                "codeception/codeception": "2.0.*",
+                "kriswallsmith/spork": "dev-master",
+                "pdezwart/php-amqp": "dev-master",
+                "phpunit/phpunit": "4.6.*",
+                "yiisoft/yii2-codeception": "*",
+                "yiisoft/yii2-redis": "*"
+            },
+            "default-branch": true,
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "bazilio\\async\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vasily Ostanin",
+                    "email": "bazilio91@gmail.com"
+                }
+            ],
+            "description": "Provides translucent api for moving large tasks out of request context",
+            "keywords": [
+                "AMQP",
+                "Tasks",
+                "async",
+                "mysql",
+                "rabbitmq",
+                "redis",
+                "yii2"
+            ],
+            "support": {
+                "issues": "https://github.com/bazilio91/yii2-async/issues",
+                "source": "https://github.com/bazilio91/yii2-async/tree/master"
+            },
+            "time": "2020-04-09T22:36:50+00:00"
+        },
         {
             "name": "bower-asset/bootstrap",
             "version": "v3.4.1",
@@ -6378,7 +6437,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "bazilio/yii2-async": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
