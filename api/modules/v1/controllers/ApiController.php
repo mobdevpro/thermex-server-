@@ -37,6 +37,7 @@ class ApiController extends \api\modules\v1\components\ApiController
         'get-category',
         'get-degree',
         'gray-image',
+        'link',
     ];
     
     public function behaviors() {
@@ -51,6 +52,12 @@ class ApiController extends \api\modules\v1\components\ApiController
     public function init() {
         parent::init();
         Yii::$app->response->format = Response::FORMAT_JSON;
+    }
+
+    public function actionLink() {
+        Yii::$app->response->format = Response::FORMAT_HTML;
+        // echo '<html><body><a href="tg://resolve?domain=KhadeevRV">link</a></body></html>';
+        echo '<html><body><a href="gorussia://app">link</a></body></html>';
     }
 
     public function actionGrayImage() {

@@ -7,12 +7,14 @@ use yii;
 use common\models\User;
 use common\models\Device;
 
-class Singleton extends \SplPriorityQueue
+class Simple
 {
     private static $instances = [];
-    
+    public $modems;
+
     protected function __construct() {
-        
+        // $this->modems = [];
+        // parent::__construct();
     }
 
     protected function __clone() {
@@ -23,12 +25,13 @@ class Singleton extends \SplPriorityQueue
         throw new \Exception("Cannot unserialize a singleton.");
     }
 
-    public static function getInstance(): Singleton {
-        $class = static::class;
-        if (!isset(self::$instances[$class])) {
-            self::$instances[$class] = new static();
+    public static function getInstance(): Simple {
+        $cls = static::class;
+        if (!isset(self::$instances[$cls])) {
+            self::$instances[$cls] = new static();
         }
-        return self::$instances[$class];
+
+        return self::$instances[$cls];
     }
 
     public static function releaseInstance() {

@@ -2,6 +2,7 @@
 
 namespace console\controllers;
 
+use yii;
 use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
@@ -19,7 +20,9 @@ class ChatController extends \yii\console\Controller
 
     public function actionStartSocket($port=503)
     {
-        $this->singleton = Singleton::getInstance();
+        Yii::$container->get('singleton');
+        // $this->singleton = Yii::$container->get('Singleton');
+        $this->singleton = Singleton::get();
         $this->singletonQueue = SingletonQueue::getInstance();
         $this->singletonUser = SingletonUser::getInstance();
 

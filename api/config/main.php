@@ -228,6 +228,7 @@ return [
                         'GET get-code' => 'get-code',
                         'GET login' => 'login',
                         'GET logout' => 'logout',
+                        'GET link' => 'link',
                     ]
                 ]
             ],

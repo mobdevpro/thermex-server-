@@ -1,40 +1,35 @@
 <?php
+// ./yii async-worker/daemon modbus
 namespace console\components; 
 
 use yii;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
-use Ratchet\RFC6455\Messaging\FrameInterface;
 use common\models\User;
 use common\models\Device;
 use console\components\Singleton;
 use console\components\SingletonQueue;
-use console\components\SingletonUser;
-use console\components\SenderJob;
+use console\components\Simple;
 use console\controllers\Helper;
 
 class SocketServer implements MessageComponentInterface
 {
-    public $modems;
+    public static $modems;
     var $singleton;
     var $singletonQueue;
-    var $singletonUser;
     var $key;
+    var $session;
 
     public function __construct($key)
     {
         $this->singleton = Singleton::getInstance();
         $this->singletonQueue = SingletonQueue::getInstance();
-        $this->singletonUser = SingletonUser::getInstance();
+
         $this->singletonQueue->dev = new \stdClass();
         $this->singletonQueue->dev->dev = [];
         $this->singletonQueue->dev->socket = [];
         
-        $this->singletonQueue->user = new \stdClass();
-        $this->singletonQueue->user->user = [];
-        $this->singletonQueue->user->socket = [];
         $this->key = $key;
-        // $this->enableKeepAlive = false;
     }
 
     public function onOpen(ConnectionInterface $conn)
@@ -74,8 +69,16 @@ class SocketServer implements MessageComponentInterface
 
                 $device->is_online = 1;
                 $device->save();
-                $this->singletonQueue->dev->dev[$device->id] = $from;
+
                 $this->singletonQueue->dev->socket[$from->resourceId]->device = $device;
+
+                if (empty($this->singletonQueue->dev->dev[$device->id])) {
+                    $this->singletonQueue->dev->dev[$device->id] = new \stdClass();
+                    $this->singletonQueue->dev->dev[$device->id]->socket = $from;
+                    $this->singletonQueue->dev->dev[$device->id]->device = $device;
+                    $this->singletonQueue->dev->dev[$device->id]->command = null;
+                }
+
                 echo 'Законнектился : '.$this->singletonQueue->dev->socket[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
                 
                 $address = Helper::getAddresses($device);
@@ -99,6 +102,7 @@ class SocketServer implements MessageComponentInterface
                     $obj->device = $device;
                     $obj->socket = $from;
                     $obj->data = $data;
+                    $obj->socketId = $from->resourceId;
                     $obj->start = $address->{'3000'}[$i]->start;
                     $obj->length = $address->{'3000'}[$i]->length;
                     $obj->addresses = $address->{'3000'}[$i]->addresses;
@@ -107,9 +111,6 @@ class SocketServer implements MessageComponentInterface
                     $obj->transaction_id = $transaction_id;
                     $obj->count = 1;
                     $this->singleton->insert($obj, $priority);
-                    // $id = Yii::$app->queue->push(new SenderJob([
-                    //     'obj' => $obj,
-                    // ]));
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {
@@ -147,6 +148,7 @@ class SocketServer implements MessageComponentInterface
                 $device->is_online = 1;
                 $device->save();
                 $this->singletonQueue->dev->socket[$from->resourceId]->device = $device;
+                $this->singletonQueue->dev->dev[$device->id]->device = $device;
             } else {
                 $from->close();
             }
@@ -156,7 +158,7 @@ class SocketServer implements MessageComponentInterface
 
             $this->singleton->extract();
 
-            Helper::getAnswer($this->singletonQueue->dev->socket[$from->resourceId]->command, $msg);
+            $an = Helper::getAnswer($this->singletonQueue->dev->socket[$from->resourceId]->command, $msg);
 
             if ($obj->command == 'read') {
                 $time = time() + 15;
@@ -164,6 +166,30 @@ class SocketServer implements MessageComponentInterface
                 $obj->count = $obj->count + 1;
                 $this->singletonQueue->dev->socket[$from->resourceId]->command = null;
                 $this->singleton->insert($obj, -$time);
+            } else {
+                if ($an) {
+                    $msg = new \stdClass();
+                    $msg->success = true;
+                    $msg->message = 'Все отлично!';
+                    $msg->device = $this->singletonQueue->dev->socket[$from->resourceId]->command->device->id;
+                    $msg->address = $this->singletonQueue->dev->socket[$from->resourceId]->command->address;
+                    $msg->value = $this->singletonQueue->dev->socket[$from->resourceId]->command->value;
+                    $uu = $this->singletonQueue->dev->socket[$from->resourceId]->command->user;
+                    // echo 'user: ';print_r($uu);
+                    $userSocket = $this->singletonQueue->user->user[$uu->id]->socket;
+                    $userSocket->send(json_encode($msg));
+                } else {
+                    $msg = new \stdClass();
+                    $msg->success = false;
+                    $msg->message = 'Ошибка в ответе!';
+                    $msg->device = $this->singletonQueue->dev->socket[$from->resourceId]->command->device->id;
+                    $msg->address = $this->singletonQueue->dev->socket[$from->resourceId]->command->value;
+                    $uu = $this->singletonQueue->dev->socket[$from->resourceId]->command->user;
+                    // echo 'user error: ';print_r($uu);
+                    $userSocket = $this->singletonQueue->user->user[$uu->id]->socket;
+                    $userSocket->send(json_encode($msg));
+                }
+                $this->singletonQueue->dev->socket[$from->resourceId]->command = null;
             }
         }
     }

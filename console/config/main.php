@@ -19,7 +19,23 @@ return [
         'fixture' => [
             'class' => 'yii\console\controllers\FixtureController',
             'namespace' => 'common\fixtures',
-          ],
+        ],
+        'async-worker' => [
+            'class' => 'bazilio\async\commands\AsyncWorkerCommand',
+        ],
+    ],
+    'container' => [
+        'singletons' => [
+            'singleton' => [
+                'class' => 'console\components\Singleton'
+            ],
+            console\components\SingletonUser::Class => [
+                'class' => 'console\components\SingletonUser'
+            ],
+            console\components\SingletonQueue::Class => [
+                'class' => 'console\components\SingletonQueue'
+            ],
+        ],
     ],
     'components' => [
         'log' => [

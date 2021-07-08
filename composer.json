@@ -23,7 +23,8 @@
         "yiisoft/yii2-queue": "^2.3",
         "predis/predis": "^1.1",
         "yiisoft/yii2-redis": "*",
-        "bazilio/yii2-async": "dev-master"
+        "bazilio/yii2-async": "dev-master",
+        "react/event-loop": "^1.1"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

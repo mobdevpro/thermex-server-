@@ -49,8 +49,54 @@ class Helper
         return $command;
     }
 
-    public static function BuildWriteRequest($uid, $address, $value) {
+    public static function BuildWriteRequest($device, $address, $value) {
 
+        if ($device->firmware_id == null) {
+            echo 'write: firmware not found'.PHP_EOL;
+            return false;
+        }
+
+        Yii::$app->db->open();
+        $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+        Yii::$app->db->close();
+
+        if (empty($fw)) {
+            echo 'write: firmware not found'.PHP_EOL;
+            return false;
+        }
+
+        $fields = $fw->fields;
+        $fields = json_decode($fields, true);
+
+        echo 'write: '.$address;
+        print_r($fields[$address]);
+        if (empty($fields[$address])) {
+            echo 'write: field not found'.PHP_EOL;
+            return false;
+        }
+
+        if ($fields[$address]['division'] == 10) {
+            if (($fields[$address]['min']*10) > $value || ($fields[$address]['max']*10) < $value) {
+                echo 'write: value*10 not in range'.PHP_EOL;
+                echo 'value: '.$value.' min: '.($fields[$address]['min']*10).' max: '.($fields[$address]['max']*10).PHP_EOL;
+                return false;
+            }
+        } else {
+            if ($fields[$address]['min'] > $value || $fields[$address]['max'] < $value) {
+                echo 'write: value not in range'.PHP_EOL;
+                echo 'value: '.$value.' min: '.$fields[$address]['min'].' max: '.$fields[$address]['max'].PHP_EOL;
+                return false;
+            }
+        }
+
+        if ($fields[$address]['mode'] != 'RW') {
+            echo 'write: address not RW'.PHP_EOL;
+            return false;
+        }
+
+        $uid = $device->address;
+        Firmware::find();
+        $address = $address - 1;
         $address = 0xffff & $address;
         $value = 0xffff & $value;
         $uid = 0xff & $uid;
@@ -60,6 +106,8 @@ class Helper
         $crc1 = substr(bin2hex(pack('n', (($crc & 0xff00) >> 8))), -2);
         $crc2 = substr(bin2hex(pack('n', (($crc & 0xff)))), -2);
         $command = $command.$crc2.$crc1;
+
+        echo 'write command: '.$command.PHP_EOL;
         return $command;
     }
 
@@ -174,6 +222,7 @@ class Helper
         if ($task->command == 'read') {
             if ($answer[2].$answer[3] == '83') {
                 echo 'ошибка чтения'.PHP_EOL;
+                return false;
             } else {
                 echo 'getAnswer start: '.date('Y-m-d H:i:s').PHP_EOL;
                 $l = base_convert($answer[4].$answer[5], 16, 10)/2;
@@ -239,6 +288,16 @@ class Helper
                 $dd->save();
                 Yii::$app->db->close();
                 echo 'getAnswer end: '.date('Y-m-d H:i:s').PHP_EOL;
+                return true;
+            }
+        } else {
+            if ($answer[2].$answer[3] == '8F' || $answer[2].$answer[3] == '8f') {
+                echo 'ошибка записи'.PHP_EOL;
+                return false;
+            } else {
+                echo 'getAnswer write start: '.date('Y-m-d H:i:s').PHP_EOL;
+                echo 'write answer: '.$answer.PHP_EOL;
+                return true;
             }
         }
     }
