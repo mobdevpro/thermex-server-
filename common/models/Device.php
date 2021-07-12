@@ -118,6 +118,40 @@ class Device extends \yii\db\ActiveRecord
                     // echo 'exist';die;
                 }
 
+                $str = '';
+                if ($connection->schema->getTableSchema('device_alarm_'.$this->id) == null) {
+                    if ($this->firmware_id != null) {
+                        $fw = Firmware::find()->where(['id' => $this->firmware_id])->one();
+                        if (!empty($fw)) {
+                            $alarm = json_decode($fw->alarm);
+                            // $str = 'SET GLOBAL innodb_default_row_format=\'dynamic\';SET SESSION innodb_strict_mode=ON;';
+                            $str = $str.'CREATE  TABLE IF NOT EXISTS device_alarm_'.$this->id.' (
+                                `id` int(11) NOT NULL auto_increment,';
+                            $str = $str.'`time` DATETIME,';
+                            $str = $str.'`transaction_id` TEXT(30),';
+                            $array = [];
+                            for ($i=0;$i<count($alarm);$i++) {
+                                $address = $alarm[$i]->address;
+                                $address = explode('.', $address);
+                                $key = trim($address[0]).'_'.trim($address[1]);
+                                array_push($array, $key);
+                                
+                            }
+                            asort($array);
+
+                            for ($i=0;$i<count($array);$i++) {
+                                $str = $str.'`'.$array[$i].'` int(1),';
+                            }
+
+                            $str = $str.'PRIMARY KEY (`id`)) ENGINE = InnoDB;';
+                            $command = $connection->createCommand($str);
+                            $command->execute();
+                        }
+                    }
+                } else {
+                    // echo 'exist';die;
+                }
+
                 $connection->close();
 
                 if (strlen($str)) {
@@ -157,6 +191,7 @@ class Device extends \yii\db\ActiveRecord
     {
         $attributes = parent::attributes();
         $attributes[] = 'data';
+        $attributes[] = 'alarms';
         return $attributes;
     }
 }

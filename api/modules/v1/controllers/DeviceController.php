@@ -9,6 +9,7 @@ use common\models\DicModels;
 use common\models\Device;
 use common\models\Firmware;
 use common\models\DeviceData;
+use common\models\DeviceAlarm;
 use common\models\DicSensor;
 
 /**
@@ -93,14 +94,54 @@ class DeviceController extends \api\modules\v1\components\ApiController
                         } else {
                             $devices[$i]->data = null;
                         }
+
+                        DeviceAlarm::setDevice($devices[$i]);
+                        DeviceAlarm::setConnection(Yii::$app->db);
+                        Yii::$app->db->open();
+                        $da = DeviceAlarm::find()->one();
+                        Yii::$app->db->close();
+
+                        if (!empty($da)) {
+                            $alarm = json_decode($fw->alarm);
+                            $alarmArray = [];
+                            foreach ($da as $aa => $vv) {
+                                if (strpos($aa, '_')) {
+                                    if ($vv == 1) {
+                                        for ($z=0;$z<count($alarm);$z++) {
+                                            $adr = $aa;
+                                            $adr = explode('_', $adr);
+                                            $adr = $adr[0].'.'.$adr[1];
+                                            if (str_replace(' ', '', $alarm[$z]->address) === $adr) {
+                                                array_push($alarmArray, $alarm[$z]);
+                                                break;
+                                            }
+                                            // array_push($alarmArray, str_replace(' ', '', $alarm[$z]->address));
+                                        }
+                                        // $data = [];
+                                        // $data['dev'] = $devices[$i];
+                                        // $data['vv'] = $vv;
+                                        // $data['aa'] = $aa;
+                                        // $data['adr'] = $adr;
+                                        // $data['alarmArray'] = $alarmArray;
+                                        // return $data;
+                                    }
+                                }
+                            }
+                            $devices[$i]->alarms = $alarmArray;
+                        } else {
+                            $devices[$i]->alarms = null;
+                        }
                     } else {
                         $devices[$i]->data = null;
+                        $devices[$i]->alarms = null;
                     }
                 } else {
                     $devices[$i]->data = null;
+                    $devices[$i]->alarms = null;
                 }
             } else {
                 $devices[$i]->data = null;
+                $devices[$i]->alarms = null;
             }
         }
         
@@ -275,6 +316,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $serial = $params['serial'];
         $imei = $params['imei'];
         $address = $params['address'];
+        $password = $params['password'];
         $partner_id = $params['partner_id'];
         $date_product = $params['date_product'];
         $date_build = $params['date_build'];
@@ -305,6 +347,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
             $device->mount_fias = $mount_fias;
             $device->timezone = $timezone;
             $device->status = $status;
+            $device->password = $password;
             
             if($device->save()) {
                 $data = [];
@@ -333,6 +376,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
                 $device->mount_fias = $mount_fias;
                 $device->timezone = $timezone;
                 $device->status = $status;
+                $device->password = $password;
 
                 if($device->save()) {
                     $data = [];

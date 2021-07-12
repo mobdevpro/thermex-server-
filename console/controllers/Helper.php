@@ -10,6 +10,7 @@ use Eole\Sandstone;
 use common\models\Device;
 use common\models\Firmware;
 use common\models\DeviceData;
+use common\models\DeviceAlarm;
 
 class Helper
 {
@@ -216,6 +217,33 @@ class Helper
         }
     }
 
+    public static function getAlarms($device) {
+
+        if (!empty($device)) {
+            Yii::$app->db->open();
+            $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+            Yii::$app->db->close();
+            if (!empty($fw)) {
+                $alarm = $fw->alarm;
+                $alarm = json_decode($alarm);
+                $array = [];
+                for ($i=0;$i<count($alarm);$i++) {
+                    $adr = $alarm[$i]->address;
+                    $adr = explode('.', $adr);
+                    $adr = (int)$adr[0];
+                    if (!in_array($adr, $array)) {
+                        array_push($array, $adr);
+                    }
+                }
+                return $array;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
     public static function getAnswer($task, $answer) {
 
         $answer = bin2hex($answer);
@@ -288,6 +316,93 @@ class Helper
                 $dd->save();
                 Yii::$app->db->close();
                 echo 'getAnswer end: '.date('Y-m-d H:i:s').PHP_EOL;
+                return true;
+            }
+        } else if ($task->command == 'alarm') {
+            if ($answer[2].$answer[3] == '83') {
+                echo 'alarm ошибка чтения'.PHP_EOL;
+                return false;
+            } else {
+                echo 'getAnswer alarm start: '.date('Y-m-d H:i:s').PHP_EOL;
+                $l = base_convert($answer[4].$answer[5], 16, 10)/2;
+                $data = substr($answer, 6);
+
+                $obj = new \stdClass();
+                for ($i=0;$i<$l;$i++) {
+                    $vv = unpack("s", pack("s", hexdec(substr($data, $i*4, 4))));
+                    // echo 'ff06 - '.reset($vv).PHP_EOL;
+                    $obj->{(int)$task->alarms[$i]} = reset($vv);//base_convert(substr($data, $i*4, 4), 16, 10);
+                }
+
+                print_r($obj);
+
+                Yii::$app->db->open();
+                $fw = Firmware::find()->where(['id' => $task->device->firmware_id])->one();
+                $alarm = json_decode($fw->alarm, true);
+                Yii::$app->db->close();
+
+                $obj2 = new \stdClass();
+                for ($i=0;$i<count($alarm);$i++) {
+                    $adr = $alarm[$i]['address'];
+                    $adr2 = explode('.', $adr);
+                    $adr = (int)$adr2[0];
+                    $adr2 = (int)$adr2[1];
+                    if (property_exists($obj, $adr)) {
+                        // echo '$obj->{$adr}: '.$obj->{$adr}.PHP_EOL;
+                        $value = (($obj->{$adr} & (1 << $adr2)) >> $adr2);
+                        $obj2->{$alarm[$i]['address']} = $value;
+                        if ($task->device->id == 14) {
+                            // echo $alarm[$i]['address'].' - adr: '.$adr.' adr2: '.$adr2.PHP_EOL;
+                            // echo '$obj->{$adr}: '.$obj->{$adr}.' adr: '.$adr.' adr2: '.$adr2.' 1 << $adr2: '.(1 << $adr2).' value: '.$value.PHP_EOL;
+                        }
+                    } else {
+                        // echo '$obj->{$adr}: not'.PHP_EOL;
+                    }
+                }
+
+                if ($task->device->id == 14) {
+                    // print_r($obj2);
+                }
+
+                DeviceAlarm::setDevice($task->device);
+                $conn = DeviceData::getDb();
+                $conn->open();
+                $transaction_id = $task->transaction_id.'_'.$task->count;
+                $da = DeviceAlarm::find()->where(['transaction_id' => $transaction_id])->one();
+                
+                if (empty($da)) {
+                    $da = new DeviceAlarm();
+                    $da->transaction_id = $transaction_id;
+                    $da->time = date('Y-m-d H:i:s', time());
+                    echo 'DeviceAlarm empty'.PHP_EOL;
+                }
+                // // print_r($fields);
+                foreach ($obj2 as $key => $value) {
+                    $key = explode('.', $key);
+                    $key = trim($key[0]).'_'.trim($key[1]);
+                    $da->{$key} = $value;
+                }
+
+                $da->save();
+                $conn->close();
+                DeviceAlarm::setConnection(Yii::$app->db);
+                Yii::$app->db->open();
+                $da = DeviceAlarm::find()->one();
+                
+                if (empty($da)) {
+                    $da = new DeviceAlarm();
+                }
+                
+                foreach ($obj2 as $key => $value) {
+                    $key = explode('.', $key);
+                    $key = trim($key[0]).'_'.trim($key[1]);
+                    $da->{$key} = $value;
+                }
+                
+                $da->time = date('Y-m-d H:i:s', time());
+                $da->save();
+                Yii::$app->db->close();
+                echo 'getAnswer alarm end: '.date('Y-m-d H:i:s').PHP_EOL;
                 return true;
             }
         } else {

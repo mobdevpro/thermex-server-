@@ -15,12 +15,12 @@ use console\controllers\Helper;
 class ChatServer implements MessageComponentInterface
 {
     public $users;
-    var $singleton;
+    // var $singleton;
     var $singletonQueue;
     
     public function __construct()
     {
-        $this->singleton = Singleton::getInstance();
+        // $this->singleton = Singleton::getInstance();
         $this->singletonQueue = SingletonQueue::getInstance();
         
         $this->singletonQueue->user = new \stdClass();
@@ -61,10 +61,11 @@ class ChatServer implements MessageComponentInterface
 
         if (empty($this->singletonQueue->user->user[$client->id])) {
             $this->singletonQueue->user->user[$client->id] = new \stdClass();
-            $this->singletonQueue->user->user[$client->id]->socket = $from;
-            $this->singletonQueue->user->user[$client->id]->user = $client;
-            $this->singletonQueue->user->user[$client->id]->command = $data['data'];
         }
+
+        $this->singletonQueue->user->user[$client->id]->socket = $from;
+        $this->singletonQueue->user->user[$client->id]->user = $client;
+        $this->singletonQueue->user->user[$client->id]->command = $data['data'];
 
         if($data['command'] == 'setValue') {
             echo 'setValue';
@@ -117,6 +118,7 @@ class ChatServer implements MessageComponentInterface
 
             $data2 = Helper::BuildWriteRequest($device, $data['data']['address'], $data['data']['value']);
             if ($data2) {
+
                 $obj = new \stdClass();
                 $obj->device = $device;
                 $obj->user = $client;
@@ -129,7 +131,7 @@ class ChatServer implements MessageComponentInterface
                 $obj->command = 'write';
                 // $obj->transaction_id = $transaction_id;
                 // $obj->count = 1;
-                $this->singleton->insert($obj, time());
+                $this->singletonQueue->dev->socket[$fromDev->socket->resourceId]->queue->insert($obj, time());
             }
 
             return;

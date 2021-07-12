@@ -15,14 +15,14 @@ use console\controllers\Helper;
 class SocketServer implements MessageComponentInterface
 {
     public static $modems;
-    var $singleton;
+    // var $singleton;
     var $singletonQueue;
     var $key;
     var $session;
 
     public function __construct($key)
     {
-        $this->singleton = Singleton::getInstance();
+        // $this->singleton = Singleton::getInstance();
         $this->singletonQueue = SingletonQueue::getInstance();
 
         $this->singletonQueue->dev = new \stdClass();
@@ -40,6 +40,7 @@ class SocketServer implements MessageComponentInterface
         $this->singletonQueue->dev->socket[$conn->resourceId]->socket = $conn;
         $this->singletonQueue->dev->socket[$conn->resourceId]->device = null;
         $this->singletonQueue->dev->socket[$conn->resourceId]->command = null;
+        $this->singletonQueue->dev->socket[$conn->resourceId]->queue = new \SplPriorityQueue();
     }
 
     public function onMessage(ConnectionInterface $from, $msg)
@@ -74,10 +75,11 @@ class SocketServer implements MessageComponentInterface
 
                 if (empty($this->singletonQueue->dev->dev[$device->id])) {
                     $this->singletonQueue->dev->dev[$device->id] = new \stdClass();
-                    $this->singletonQueue->dev->dev[$device->id]->socket = $from;
-                    $this->singletonQueue->dev->dev[$device->id]->device = $device;
-                    $this->singletonQueue->dev->dev[$device->id]->command = null;
                 }
+
+                $this->singletonQueue->dev->dev[$device->id]->socket = $from;
+                $this->singletonQueue->dev->dev[$device->id]->device = $device;
+                $this->singletonQueue->dev->dev[$device->id]->command = null;
 
                 echo 'Законнектился : '.$this->singletonQueue->dev->socket[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
                 
@@ -85,6 +87,15 @@ class SocketServer implements MessageComponentInterface
 
                 if ($address == null) {
                     echo 'not found address';
+                    $from->close();
+                    Yii::$app->db->close();
+                    return;
+                }
+
+                $alarms = Helper::getAlarms($device);
+
+                if ($alarms == null) {
+                    echo 'not found alarms';
                     $from->close();
                     Yii::$app->db->close();
                     return;
@@ -110,7 +121,8 @@ class SocketServer implements MessageComponentInterface
                     $obj->command = 'read';
                     $obj->transaction_id = $transaction_id;
                     $obj->count = 1;
-                    $this->singleton->insert($obj, $priority);
+                    // $this->singleton->insert($obj, $priority);
+                    $this->singletonQueue->dev->socket[$from->resourceId]->queue->insert($obj, $priority);
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {
@@ -131,9 +143,35 @@ class SocketServer implements MessageComponentInterface
                     $obj->command = 'read';
                     $obj->transaction_id = $transaction_id;
                     $obj->count = 1;
-                    $this->singleton->insert($obj, $priority);
+                    // $this->singleton->insert($obj, $priority);
+                    $this->singletonQueue->dev->socket[$from->resourceId]->queue->insert($obj, $priority);
                 }
-                echo 'on connect count: '.$this->singleton->count().PHP_EOL;
+
+                if (count($alarms)) {
+                    if ($this->key == 1) {
+                        $priority = -(time() + 15);
+                    } else {
+                        $priority = -(time() + 120);
+                    }
+                    $data = Helper::BuildReadRequest($device->address, $alarms[0] - 1, count($alarms));
+                    $obj = new \stdClass();
+                    $obj->device = $device;
+                    $obj->socket = $from;
+                    $obj->data = $data;
+                    $obj->socketId = $from->resourceId;
+                    $obj->alarms = $alarms;
+                    $obj->time = -$priority;
+                    $obj->command = 'alarm';
+                    $obj->transaction_id = $transaction_id;
+                    $obj->count = 1;
+                    // $this->singleton->insert($obj, $priority);
+                    $this->singletonQueue->dev->socket[$from->resourceId]->queue->insert($obj, $priority);
+                    // if ($device->id == 14) {
+                    //     $this->singleton->insert($obj, $priority);
+                    // }
+                }
+
+                echo 'on connect count: '.$this->singletonQueue->dev->socket[$from->resourceId]->queue->count().PHP_EOL;
             } else {
                 echo 'not found device'.PHP_EOL;
                 $from->close();
@@ -156,7 +194,7 @@ class SocketServer implements MessageComponentInterface
             echo 'device: '.$this->singletonQueue->dev->socket[$from->resourceId]->device->name_our.' onMessage: '.$msg.' bin2hex: '.bin2hex($msg).PHP_EOL;
             $obj = $this->singletonQueue->dev->socket[$from->resourceId]->command;
 
-            $this->singleton->extract();
+            $this->singletonQueue->dev->socket[$from->resourceId]->queue->extract();
 
             $an = Helper::getAnswer($this->singletonQueue->dev->socket[$from->resourceId]->command, $msg);
 
@@ -165,7 +203,13 @@ class SocketServer implements MessageComponentInterface
                 $obj->time = $time;
                 $obj->count = $obj->count + 1;
                 $this->singletonQueue->dev->socket[$from->resourceId]->command = null;
-                $this->singleton->insert($obj, -$time);
+                $this->singletonQueue->dev->socket[$from->resourceId]->queue->insert($obj, -$time);
+            } else if ($obj->command == 'alarm') {
+                $time = time() + 15;
+                $obj->time = $time;
+                $obj->count = $obj->count + 1;
+                $this->singletonQueue->dev->socket[$from->resourceId]->command = null;
+                $this->singletonQueue->dev->socket[$from->resourceId]->queue->insert($obj, -$time);
             } else {
                 if ($an) {
                     $msg = new \stdClass();
