@@ -11,6 +11,7 @@ use common\models\Firmware;
 use common\models\DeviceData;
 use common\models\DeviceAlarm;
 use common\models\DicSensor;
+use common\models\Alarms;
 
 /**
  * Device Controller
@@ -115,15 +116,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
                                                 array_push($alarmArray, $alarm[$z]);
                                                 break;
                                             }
-                                            // array_push($alarmArray, str_replace(' ', '', $alarm[$z]->address));
                                         }
-                                        // $data = [];
-                                        // $data['dev'] = $devices[$i];
-                                        // $data['vv'] = $vv;
-                                        // $data['aa'] = $aa;
-                                        // $data['adr'] = $adr;
-                                        // $data['alarmArray'] = $alarmArray;
-                                        // return $data;
                                     }
                                 }
                             }
@@ -176,6 +169,20 @@ class DeviceController extends \api\modules\v1\components\ApiController
         } else {
             $device = Device::find()->where(['id' => $params['id'], 'partner_id' => $user->id])->one();
         }
+
+        $dm = DicModels::find()->where(['id' => $device->model_id])->one();
+
+        if (!empty($dm)) {
+            $obj = new \stdClass();
+            $obj->model = $dm->name;
+            $obj->seria = $dm->seria;
+            $obj->seria_id = $dm->seria_id;
+            $str = str_replace(' ', '', $dm->seria);
+            $obj->seria_short = strtolower($str);
+            $device->model = $obj;
+        } else {
+            $device->model = null;
+        }
         
         if ($device->firmware_id != null) {
             $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
@@ -192,27 +199,64 @@ class DeviceController extends \api\modules\v1\components\ApiController
                         foreach ($firmware as $key => $value) {
                             for ($y=0;$y<count($firmware[$key]->data);$y++) {
                                 $address = $firmware[$key]->data[$y]->address;
-                                // echo 'v: '.$dd->{$address};
-                                // if (property_exists($dd, (string)$address)) {
-                                    $firmware[$key]->data[$y]->value = $dd->{$address};
-                                // } else {
-                                    // $firmware[$key]->data[$y]->value = null;
-                                // }
-                                // print_r($firmware[$key]->data[$y]);die;
+                                $firmware[$key]->data[$y]->value = $dd->{$address};
                             }
                         }
                         $device->data = $firmware;
                     } else {
                         $device->data = null;
                     }
+
+                    DeviceAlarm::setDevice($device);
+                    DeviceAlarm::setConnection(Yii::$app->db);
+                    Yii::$app->db->open();
+                    $da = DeviceAlarm::find()->one();
+                    Yii::$app->db->close();
+
+                    if (!empty($da)) {
+                        $alarm = json_decode($fw->alarm);
+                        $alarmArray = [];
+                        foreach ($da as $aa => $vv) {
+                            if (strpos($aa, '_')) {
+                                if ($vv == 1) {
+                                    for ($z=0;$z<count($alarm);$z++) {
+                                        $adr = $aa;
+                                        $adr = explode('_', $adr);
+                                        $adr = $adr[0].'.'.$adr[1];
+                                        if (str_replace(' ', '', $alarm[$z]->address) === $adr) {
+                                            array_push($alarmArray, $alarm[$z]);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        $device->alarms = $alarmArray;
+                    } else {
+                        $device->alarms = null;
+                    }
                 } else {
                     $device->data = null;
+                    $device->alarms = null;
                 }
             } else {
                 $device->data = null;
+                $device->alarms = null;
             }
         } else {
             $device->data = null;
+            $device->alarms = null;
+        }
+
+        if ($device->alarms !== null) {
+            $array = [];
+            for ($i=0;$i<count($device->alarms);$i++) {
+                $al = Alarms::find()->where(['device_id' => $device->id, 'is_active' => 1, 'label' => $device->alarms[$i]->label])->orderBy(['time' => SORT_DESC])->one();
+                if (!empty($al)) {
+                    array_push($array, $al);
+                }
+            }
+            $device->alarms = $array;
         }
         
         $data = [];

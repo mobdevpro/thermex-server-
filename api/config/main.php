@@ -230,6 +230,15 @@ return [
                         'GET logout' => 'logout',
                         'GET link' => 'link',
                     ]
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'pluralize' => false,
+                    'controller' => 'v1/notification',
+                    'extraPatterns' => [
+                        'POST upload' => 'upload',
+                        'GET get-notifications' => 'get-notifications',
+                    ]
                 ]
             ],
         ],

@@ -11,6 +11,7 @@ use common\models\Device;
 use common\models\Firmware;
 use common\models\DeviceData;
 use common\models\DeviceAlarm;
+use common\models\Alarms;
 
 class Helper
 {
@@ -389,14 +390,53 @@ class Helper
                 Yii::$app->db->open();
                 $da = DeviceAlarm::find()->one();
                 
+                $is_new = false;
                 if (empty($da)) {
                     $da = new DeviceAlarm();
+                    $is_new = true;
                 }
                 
                 foreach ($obj2 as $key => $value) {
-                    $key = explode('.', $key);
-                    $key = trim($key[0]).'_'.trim($key[1]);
-                    $da->{$key} = $value;
+                    $key2 = explode('.', $key);
+                    $key2 = trim($key2[0]).'_'.trim($key2[1]);
+                    if ($is_new) {
+                        if ($value == 1) {
+                            for ($i=0;$i<count($alarm);$i++) {
+                                if (str_replace(' ', '', $alarm[$i]['address']) === str_replace(' ', '', $key)) {
+                                    $al = new Alarms();
+                                    $al->device_id = $task->device->id;
+                                    $al->firmware_id = $task->device->firmware_id;
+                                    $al->address = str_replace(' ', '', $alarm[$i]['address']);
+                                    $al->label = $alarm[$i]['label'];
+                                    $al->description = $alarm[$i]['description'];
+                                    $al->is_alarm = $alarm[$i]['is_alarm'] == 1 ? 1 : 0;
+                                    $al->is_active = 1;
+                                    $al->time = date('Y-m-d H:i:s', time());
+                                    $al->save();
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        if ($value != $da->{$key2}) {
+                            for ($i=0;$i<count($alarm);$i++) {
+                                if (str_replace(' ', '', $alarm[$i]['address']) === str_replace(' ', '', $key)) {
+                                    $al = new Alarms();
+                                    $al->device_id = $task->device->id;
+                                    $al->firmware_id = $task->device->firmware_id;
+                                    $al->address = str_replace(' ', '', $alarm[$i]['address']);
+                                    $al->label = $alarm[$i]['label'];
+                                    $al->description = $alarm[$i]['description'];
+                                    $al->is_alarm = $alarm[$i]['is_alarm'] == 1 ? 1 : 0;
+                                    $al->is_active = $value;
+                                    $al->time = date('Y-m-d H:i:s', time());
+                                    $al->save();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    $da->{$key2} = $value;
                 }
                 
                 $da->time = date('Y-m-d H:i:s', time());

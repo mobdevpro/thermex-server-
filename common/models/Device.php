@@ -192,6 +192,7 @@ class Device extends \yii\db\ActiveRecord
         $attributes = parent::attributes();
         $attributes[] = 'data';
         $attributes[] = 'alarms';
+        $attributes[] = 'model';
         return $attributes;
     }
 }
