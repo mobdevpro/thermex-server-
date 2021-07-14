@@ -238,6 +238,8 @@ return [
                     'extraPatterns' => [
                         'POST upload' => 'upload',
                         'GET get-notifications' => 'get-notifications',
+                        'GET get-dashboard' => 'get-dashboard',
+                        'GET get-devices' => 'get-devices',
                     ]
                 ]
             ],
