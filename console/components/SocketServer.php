@@ -103,11 +103,11 @@ class SocketServer implements MessageComponentInterface
 
                 $transaction_id = time();
                 for ($i=0;$i<count($address->{'3000'});$i++) {
-                    if ($this->key == 1) {
+                    // if ($this->key == 1) {
                         $priority = -(time() + 15);
-                    } else {
-                        $priority = -(time() + 120);
-                    }
+                    // } else {
+                    //     $priority = -(time() + 120);
+                    // }
                     $data = Helper::BuildReadRequest($device->address, $address->{'3000'}[$i]->start, $address->{'3000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
@@ -126,11 +126,11 @@ class SocketServer implements MessageComponentInterface
                 }
 
                 for ($i=0;$i<count($address->{'8000'});$i++) {
-                    if ($this->key == 1) {
+                    // if ($this->key == 1) {
                         $priority = -(time() + 15);
-                    } else {
-                        $priority = -(time() + 120);
-                    }
+                    // } else {
+                    //     $priority = -(time() + 120);
+                    // }
                     $data = Helper::BuildReadRequest($device->address, $address->{'8000'}[$i]->start, $address->{'8000'}[$i]->length);
                     $obj = new \stdClass();
                     $obj->device = $device;
@@ -148,11 +148,11 @@ class SocketServer implements MessageComponentInterface
                 }
 
                 if (count($alarms)) {
-                    if ($this->key == 1) {
+                    // if ($this->key == 1) {
                         $priority = -(time() + 15);
-                    } else {
-                        $priority = -(time() + 120);
-                    }
+                    // } else {
+                    //     $priority = -(time() + 120);
+                    // }
                     $data = Helper::BuildReadRequest($device->address, $alarms[0] - 1, count($alarms));
                     $obj = new \stdClass();
                     $obj->device = $device;

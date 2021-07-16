@@ -131,7 +131,7 @@ class ChatServer implements MessageComponentInterface
                 $obj->command = 'write';
                 // $obj->transaction_id = $transaction_id;
                 // $obj->count = 1;
-                $this->singletonQueue->dev->socket[$fromDev->socket->resourceId]->queue->insert($obj, time());
+                $this->singletonQueue->dev->socket[$fromDev->socket->resourceId]->queue->insert($obj, -time() - 15);
             }
 
             return;

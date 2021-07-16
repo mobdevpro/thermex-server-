@@ -208,6 +208,8 @@ return [
                         'POST add-device-partner' => 'add-device-partner',
                         'GET delete-device' => 'delete-device',
                         'GET delete-device-partner' => 'delete-device-partner',
+                        'GET get-data' => 'get-data',
+                        'POST get-variables' => 'get-variables',
                     ]
                 ],
                 [

@@ -13,6 +13,9 @@ use common\models\DeviceAlarm;
 use common\models\DicSensor;
 use common\models\Alarms;
 
+// set_time_limit(0);
+ini_set('max_execution_time', '0');
+
 /**
  * Device Controller
  */
@@ -21,7 +24,7 @@ class DeviceController extends \api\modules\v1\components\ApiController
     public $modelClass = 'api\modules\v1\models\Device';
     
     var $unauthorized_actions = [
-            
+        'get-data',
     ];
     
     public function behaviors() {
@@ -669,5 +672,138 @@ class DeviceController extends \api\modules\v1\components\ApiController
         $data['statuses'] = $arrayStatus;
         return $data;
     
+    }
+
+    public function actionGetData() {
+        
+        // if (!\Yii::$app->user->can('getDevices')) {
+        //     throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        // }
+
+        // $user = \Yii::$app->user->identity;
+
+        $params = Yii::$app->request->get();
+        
+        $id = $params['id'];
+        $start = $params['start'];
+        $end = $params['end'];
+
+        $device = Device::find()->where(['id' => $id])->one();
+        if (!empty($device)) {
+            Yii::$app->db->open();
+            $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+            $fields = json_decode($fw->fields, true);
+            Yii::$app->db->close();
+
+            DeviceData::setDevice($device);
+            $conn = DeviceData::getDb();
+            $conn->open();
+            $dd = DeviceData::find()->where(['>=', 'time', $start])->andWhere(['<=', 'time', $end])->orderBy(['time' => SORT_ASC])->all();
+            $conn->close();
+            
+            $str = '';
+
+            if (count($dd)) {
+                foreach ($dd[0] as $key => $value) {
+                    if ($key === 'id' || $key === 'time' || $key === 'transaction_id') {
+                        $str = $str.$key.',';
+                    } else {
+                        $field = $fields[$key];
+                        $str = $str.$key.'('.$field['label'].')'.',';
+                    }
+                }
+                $str = substr($str, 0, -1);
+            }
+            $data = [];
+            array_push($data, $str);
+
+            for ($i=0;$i<count($dd);$i++) {
+                $str = '';
+                foreach ($dd[$i] as $key => $value) {
+                    $str = $str.$value.',';
+                }
+                $str = substr($str, 0, -1);
+                array_push($data, $str);
+            }
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="device-'.$device->name_our.'-'.date('d.m.Y', time()).'.csv"');
+            // $data = array(
+            //         'aaa,bbb,ccc,dddd',
+            //         '123,456,789',
+            //         '"aaa","bbb"'
+            // );
+
+            $fp = fopen('php://output', 'wb');
+            foreach ( $data as $line ) {
+                $val = explode(",", $line);
+                fputcsv($fp, $val, ';');
+            }
+            fclose($fp);
+            die;
+        } else {
+            throw new \yii\web\HttpException(400, 'Насос в базе не найден!', User::ERROR_BAD_DATA);
+        }
+    }
+
+    public function actionGetVariables() {
+        
+        // if (!\Yii::$app->user->can('getDevices')) {
+        //     throw new \yii\web\HttpException(401, 'Операция запрещена!', User::ERROR_ACCESS_DENIED);
+        // }
+
+        // $user = \Yii::$app->user->identity;
+
+        $params = Yii::$app->request->post();
+        
+        $id = $params['id'];
+        $start = $params['start'];
+        $end = $params['end'];
+        $variables = $params['variables'];
+
+        $device = Device::find()->where(['id' => $id])->one();
+        if (!empty($device)) {
+            Yii::$app->db->open();
+            $fw = Firmware::find()->where(['id' => $device->firmware_id])->one();
+            $fields = json_decode($fw->fields, true);
+            Yii::$app->db->close();
+
+            DeviceData::setDevice($device);
+            $conn = DeviceData::getDb();
+            $conn->open();
+            $dd = DeviceData::find()->where(['>=', 'time', $start])->andWhere(['<=', 'time', $end])->orderBy(['time' => SORT_ASC])->all();
+            $conn->close();
+            
+            $array = [];
+            for ($i=0;$i<count($variables);$i++) {
+                $obj = new \stdClass();
+                $obj->label = $fields[$variables[$i]]['label'];
+                $obj->address = $fields[$variables[$i]]['address'];
+                $obj->description = $fields[$variables[$i]]['description'];
+                $vars = [];
+                $labels = [];
+                $last = 0;
+                for ($y=0;$y<count($dd);$y++) {
+                    $var = $dd[$y][$variables[$i]];
+                    if ($var == null) {
+                        $var = $last;
+                    } else {
+                        $last = $var;
+                    }
+                    array_push($vars, $var);
+                    array_push($labels, $dd[$y]['time']);
+                }
+                $obj->data = $vars;
+                $obj->labels = $labels;
+                array_push($array, $obj);
+            }
+            
+            $data = [];
+            $data['success'] = true;
+            $data['status'] = 200;
+            $data['variables'] = $array;
+            return $data;
+        } else {
+            throw new \yii\web\HttpException(400, 'Насос в базе не найден!', User::ERROR_BAD_DATA);
+        }
     }
 }

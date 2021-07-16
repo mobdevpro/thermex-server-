@@ -48,9 +48,9 @@ class ModbusController extends \yii\console\Controller
                 $task = $value->queue->current();
                 if ($task != null) {
                     if ($task->time <= time()) {
-                        if (time() - $task->time > 15) {
-                            $value->queue->extract();
-                        } else {
+                        // if (time() - $task->time > 20) {
+                        //     $value->queue->extract();
+                        // } else {
                             if ($task->command == 'read' || $task->command == 'alarm') {
                                 if (array_key_exists($task->socket->resourceId, $this->singletonQueue->dev->socket)) {
                                     if ($this->singletonQueue->dev->socket[$task->socket->resourceId]->command == null) {
@@ -61,17 +61,17 @@ class ModbusController extends \yii\console\Controller
                                         echo 'send to '.$task->device->name_our.' data: '.$task->data.PHP_EOL;
                                     }
                                 }
-                            } else {
+                            } else if ($task->command == 'write') {
                                 if (array_key_exists($task->socket->resourceId, $this->singletonQueue->dev->socket)) {
                                     if ($this->singletonQueue->dev->socket[$task->socket->resourceId]->command == null) {
                                         $this->currentTime = time();
-                                        echo 'write to '.$task->device->name_our.' data: '.$task->data.PHP_EOL;
+                                        echo 'send write to '.$task->device->name_our.' data: '.$task->data.PHP_EOL;
                                         $this->singletonQueue->dev->socket[$task->socket->resourceId]->command = $task;
                                         $this->singletonQueue->dev->dev[$task->device->id]->socket->send(hex2bin($task->data));
                                     }
                                 }
                             }
-                        }
+                        // }
                     }
                 }
             }
